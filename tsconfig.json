@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "module": "esnext",
+    "esModuleInterop": true,
+    "target": "es6",
+    "moduleResolution": "node",
+    "strict": true,    
+    "outDir": "./dist"
+  },
+  "exclude": ["./node_modules", "./dist"],
+  "lib": ["es2015"]
+}
