@@ -19,10 +19,14 @@
   },
   "homepage": "https://github.com/fabricior/fulbito-bot-nodejs#readme",
   "devDependencies": {
+    "@types/node": "^17.0.23",
     "@typescript-eslint/eslint-plugin": "^5.16.0",
     "@typescript-eslint/parser": "^5.16.0",
     "eslint": "^8.11.0",
     "ts-node-dev": "^1.1.8",
     "typescript": "^4.6.2"
+  },
+  "dependencies": {
+    "telegraf": "^4.7.0"
   }
 }
