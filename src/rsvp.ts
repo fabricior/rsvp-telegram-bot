@@ -1,20 +1,39 @@
+import { Game, RsvpOption } from "@prisma/client";
 import { db } from "./db";
 
 type RsvpRequest = {
+  gameId: string;
   telegramUserId: number;
+  rsvpOption: RsvpOption;
 };
 
-export async function rsvpViaTelegram(rsvpRequest: RsvpRequest) {
+export async function rsvpViaTelegram(rsvpRequest: RsvpRequest): Promise<Game> {
   const game = await db.game.findFirst({
-    orderBy: { dateTime: "desc" },
+    where: { id: { equals: rsvpRequest.gameId } },
   });
-  console.log(game);
-  // // await db.game.upsert({ where: { id: rsvpRequest.gameId }, update: {  }, create: { gameId } });
-  // //     id:
-  // // }}) .create({
-  // //   data: {
-  // //     requiredPlayers: 10,
-  // //     dateTime: new Date(Date.UTC(2022, 4, 4, 23, 0, 0)),
-  // //   },
-  // // });
+
+  if (!game) {
+    throw new Error(`Game ${rsvpRequest.gameId} not found`);
+  }
+
+  const user = await db.user.findFirst({
+    where: { telegramId: { equals: rsvpRequest.telegramUserId } },
+  });
+
+  if (!user) {
+    throw new Error(`User not found`);
+  }
+
+  return await db.game.update({
+    where: { id: rsvpRequest.gameId },
+    data: {
+      rsvps: {
+        push: {
+          userId: user.id,
+          option: rsvpRequest.rsvpOption,
+          createdAt: new Date(),
+        },
+      },
+    },
+  });
 }

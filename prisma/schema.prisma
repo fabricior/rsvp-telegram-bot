@@ -26,7 +26,7 @@ model Game {
   requiredPlayers  Int
   createdAt   DateTime  @default(now()) @ignore
 
-  Rsvps       Rsvp[]  @map("rsvps")
+  rsvps       Rsvp[]
 
    @@map("games")
 }
@@ -40,5 +40,6 @@ enum RsvpOption {
 type Rsvp {  
   userId     String @db.ObjectId     // Relation fields inside composite types are not supported
   option     RsvpOption
+  createdAt  DateTime  @default(now())
 }
 
