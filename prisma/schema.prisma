@@ -13,8 +13,9 @@ datasource db {
 
 model User {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
+  telegramId  BigInt
   firstName   String
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime  @default(now()) @ignore
 
    @@map("users")
 }
@@ -23,7 +24,7 @@ model Game {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
   dateTime    DateTime  
   requiredPlayers  Int
-  createdAt   DateTime  @default(now())
+  createdAt   DateTime  @default(now()) @ignore
 
   Rsvps       Rsvp[]  @map("rsvps")
 
