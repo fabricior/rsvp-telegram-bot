@@ -13,7 +13,7 @@ datasource db {
 
 model User {
   id          String @id @default(auto()) @map("_id") @db.ObjectId
-  telegramId  BigInt
+  telegramId  BigInt @unique
   firstName   String
   createdAt   DateTime  @default(now()) @ignore
 
