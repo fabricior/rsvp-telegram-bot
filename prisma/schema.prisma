@@ -18,3 +18,26 @@ model User {
 
    @@map("users")
 }
+
+model Game {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  dateTime    DateTime  
+  requiredPlayers  Int
+  createdAt   DateTime  @default(now())
+
+  Rsvps       Rsvp[]  @map("rsvps")
+
+   @@map("games")
+}
+
+enum RsvpOption {
+  YES
+  NO
+  MAYBE
+} 
+
+type Rsvp {  
+  userId     String @db.ObjectId     // Relation fields inside composite types are not supported
+  option     RsvpOption
+}
+
