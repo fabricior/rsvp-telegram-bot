@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "db_init": "prisma db push",
-    "dev": "ts-node-dev --respawn ./index.ts",
+    "dev": "ts-node-dev --respawn ./src/index.ts",
     "prod": "tsc && node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
