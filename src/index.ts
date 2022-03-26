@@ -1,8 +1,13 @@
-import { getUpcoming } from "./game";
+import { getUpcoming, insertGame } from "./game";
 import { rsvpViaTelegram } from "./rsvp";
 
 async function test_with_seed() {
   console.log("simple test_with_seed");
+
+  await insertGame({
+    dateTime: new Date(Date.UTC(2024, 4, 4, 23, 0, 0)),
+    requiredPlayers: 10,
+  });
 
   const game = await getUpcoming();
   if (!game) {

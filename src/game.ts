@@ -1,11 +1,13 @@
 import { Game, Rsvp } from "@prisma/client";
 import { db } from "./db";
 
-export async function insertGame(): Promise<Game> {
+type InsertGameRequest = Omit<Game, "id" | "rsvps">
+
+export async function insertGame(request: InsertGameRequest): Promise<Game> {
   return await db.game.create({
     data: {
-      requiredPlayers: 10,
-      dateTime: new Date(Date.UTC(2023, 4, 4, 23, 0, 0)),
+      requiredPlayers: request.requiredPlayers,
+      dateTime: request.dateTime,
     },
   });
 }
