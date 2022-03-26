@@ -26,8 +26,9 @@ export async function rsvpViaTelegram(rsvpRequest: RsvpRequest): Promise<Game> {
   }
 
   const rsvpStatus = computeRSVPStatus(game)
-  if (rsvpStatus.goingCount >= game.requiredPlayers) {
-    const willIncreaseGoingCount =  rsvpRequest.rsvpOption === "YES" && game.rsvps?.find(x => x.userId === user.id)?.option !== "YES"
+  if (rsvpStatus.goingCount >= game.requiredPlayers && rsvpRequest.rsvpOption === "YES") {
+    const previousRsvp = game.rsvps?.find(x => x.userId === user.id)?.option;
+    const willIncreaseGoingCount =  previousRsvp && previousRsvp !== "YES"
     if (willIncreaseGoingCount) {
       throw new Error('Max number of required players have confirmed already.')
     }
