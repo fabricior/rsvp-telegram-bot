@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Fulbito Bot",
   "main": "dist/index.js",
-  "scripts": {    
+  "scripts": {
     "dev": "ts-node-dev --respawn ./src/index.ts",
     "prod": "tsc && node dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "@prisma/client": "^3.11.1",
+    "dotenv": "^16.0.0",
     "telegraf": "^4.7.0"
   }
 }

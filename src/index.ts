@@ -1,26 +1,30 @@
-import { getUpcoming, insertGame } from "./game";
-import { rsvpViaTelegram } from "./rsvp";
+import setup from "./bot";
 
-async function test_with_seed() {
-  console.log("simple test_with_seed");
+setup()
 
-  await insertGame({
-    dateTime: new Date(Date.UTC(2024, 4, 4, 23, 0, 0)),
-    requiredPlayers: 10,
-  });
+// // import { getUpcoming, insertGame } from "./game";
+// // import { rsvpViaTelegram } from "./rsvp";
 
-  const game = await getUpcoming();
-  if (!game) {
-    throw Error("No upcoming games");
-  }
+// // async function test_with_seed() {
+// //   console.log("simple test_with_seed");
 
-  return rsvpViaTelegram({
-    gameId: game.id,
-    rsvpOption: "MAYBE",
-    telegramUserId: 123456,
-  });
-}
+// //   await insertGame({
+// //     dateTime: new Date(Date.UTC(2024, 4, 4, 23, 0, 0)),
+// //     requiredPlayers: 10,
+// //   });
 
-const promise = test_with_seed();
+// //   const game = await getUpcoming();
+// //   if (!game) {
+// //     throw Error("No upcoming games");
+// //   }
 
-promise.then((result) => console.log(result));
+// //   return rsvpViaTelegram({
+// //     gameId: game.id,
+// //     rsvpOption: "MAYBE",
+// //     telegramUserId: 123456,
+// //   });
+// // }
+
+// // const promise = test_with_seed();
+
+// // promise.then((result) => console.log(result));
