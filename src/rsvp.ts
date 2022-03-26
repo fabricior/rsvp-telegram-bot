@@ -1,5 +1,6 @@
 import { Game, RsvpOption } from "@prisma/client";
 import { db } from "./db";
+import { computeRSVPStatus } from "./game";
 
 type RsvpRequest = {
   gameId: string;
@@ -22,6 +23,14 @@ export async function rsvpViaTelegram(rsvpRequest: RsvpRequest): Promise<Game> {
 
   if (!user) {
     throw new Error(`User not found`);
+  }
+
+  const rsvpStatus = computeRSVPStatus(game)
+  if (rsvpStatus.goingCount >= game.requiredPlayers) {
+    const willIncreaseGoingCount =  rsvpRequest.rsvpOption === "YES" && game.rsvps?.find(x => x.userId === user.id)?.option !== "YES"
+    if (willIncreaseGoingCount) {
+      throw new Error('Max number of required players have confirmed already.')
+    }
   }
 
   return await db.game.update({
