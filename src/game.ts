@@ -6,6 +6,7 @@ type InsertGameRequest = Omit<Game, "id" | "rsvps">
 export async function insertGame(request: InsertGameRequest): Promise<Game> {
   return await db.game.create({
     data: {
+      groupId: request.groupId,
       requiredPlayers: request.requiredPlayers,
       dateTime: request.dateTime,
     },

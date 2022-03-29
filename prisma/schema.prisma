@@ -16,6 +16,7 @@ model Group {
   telegramChatId  Int @unique  
   createdAt       DateTime  @default(now()) @ignore
   users           User[]
+  games           Game[]
 
    @@map("groups")
 }
@@ -33,6 +34,8 @@ model Game {
   createdAt       DateTime  @default(now()) @ignore
 
   rsvps           Rsvp[]
+  group           Group @relation(fields: [groupId], references: [id])
+  groupId         String @db.ObjectId
 
    @@map("games")
 }
