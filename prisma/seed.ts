@@ -2,11 +2,14 @@ import { PrismaClient } from "@prisma/client";
 const prismaClient = new PrismaClient();
 
 async function seed() {
-  await prismaClient.user.createMany({
-    data: [
-      { firstName: "Fabricio", telegramId: 123456 },
-      { firstName: "Pablo", telegramId: 456789 },
-    ],
+  await prismaClient.group.create({
+    data: {
+      telegramChatId: 999,
+      users: [
+        { firstName: "Fabricio", telegramUserId: 123456 },
+        { firstName: "Pablo", telegramUserId: 456789 },
+      ],
+    },
   });
 
   return await prismaClient.game.createMany({

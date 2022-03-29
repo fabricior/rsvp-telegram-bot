@@ -11,13 +11,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  telegramId  BigInt @unique
-  firstName   String
-  createdAt   DateTime  @default(now()) @ignore
+model Group {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  telegramChatId  BigInt @unique  
+  createdAt       DateTime  @default(now()) @ignore
+  users           User[]
 
-   @@map("users")
+   @@map("groups")
+}
+
+type User {
+  telegramUserId  BigInt
+  firstName   String
+  createdAt   DateTime  @default(now())
 }
 
 model Game {
@@ -38,7 +44,7 @@ enum RsvpOption {
 } 
 
 type Rsvp {  
-  userId     String @db.ObjectId     // Relation fields inside composite types are not supported
+  userId     String @db.ObjectId
   option     RsvpOption
   createdAt  DateTime  @default(now())
 }
