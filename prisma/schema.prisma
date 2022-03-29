@@ -13,7 +13,7 @@ datasource db {
 
 model Group {
   id              String @id @default(auto()) @map("_id") @db.ObjectId
-  telegramChatId  BigInt @unique  
+  telegramChatId  Int @unique  
   createdAt       DateTime  @default(now()) @ignore
   users           User[]
 
@@ -21,18 +21,18 @@ model Group {
 }
 
 type User {
-  telegramUserId  BigInt
-  firstName   String
-  createdAt   DateTime  @default(now())
+  telegramUserId  Int
+  firstName       String
+  createdAt       DateTime  @default(now())
 }
 
 model Game {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  dateTime    DateTime  
-  requiredPlayers  Int
-  createdAt   DateTime  @default(now()) @ignore
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  dateTime        DateTime  
+  requiredPlayers Int
+  createdAt       DateTime  @default(now()) @ignore
 
-  rsvps       Rsvp[]
+  rsvps           Rsvp[]
 
    @@map("games")
 }
@@ -44,8 +44,8 @@ enum RsvpOption {
 } 
 
 type Rsvp {  
-  userId     String @db.ObjectId
-  option     RsvpOption
-  createdAt  DateTime  @default(now())
+  telegramUserId  Int
+  option          RsvpOption
+  createdAt       DateTime  @default(now())
 }
 

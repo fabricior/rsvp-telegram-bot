@@ -1,17 +1,46 @@
 import { Telegraf } from "telegraf";
 import dotenv from "dotenv";
 import { computeRSVPStatus, getUpcoming } from "./game";
+import { insertGroup } from "./group";
+import { Prisma } from "@prisma/client";
 
 dotenv.config();
 
 const token = process.env.TELEGRAM_BOT_TOKEN || "";
 const bot = new Telegraf(token);
 
+const robotName = process.env.ROBOT_NAME || "FulbitoYa";
+const environmentName = process.env.ENVIRONMENT || "test";
+
 export default function setup() {
   bot.command("start", (ctx) => {
-    console.log(ctx.from);
+    console.log(`Starting bot for ChatId ${ctx.chat.id}`);
 
-    bot.telegram.sendMessage(ctx.chat.id, "hello there! I'm FulbitoBot.", {});
+    const handleUknownError = (error: Error) => {
+      console.error(error);
+      ctx.reply("Something went wrong starting Bot");
+    };
+
+    const onSuccess = () => {
+      console.log(`Bot started for ChatId ${ctx.chat.id}`);
+      ctx.reply(`Hello there! This group is now ready to use ${robotName} (${environmentName}).`);
+    };
+
+    const onError = (error: Error | Prisma.PrismaClientKnownRequestError) => {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          ctx.reply(
+            `${robotName} (${environmentName}) is already started for current group.`
+          );
+        } else {
+          handleUknownError(error);
+        }
+      } else {
+        handleUknownError(error);
+      }
+    };
+
+    insertGroup(ctx.chat.id).then(onSuccess, onError);
   });
 
   bot.hears("cuantos", async (ctx, next) => {

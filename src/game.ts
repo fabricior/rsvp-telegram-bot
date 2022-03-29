@@ -62,7 +62,7 @@ export function computeRSVPStatus(game: Game) {
 function getlatestRsvpPerUser(game: Game): Array<Rsvp> {
   const buildRecord = () =>
     game.rsvps.reduce((previous, currentItem) => {
-      const groupKey = currentItem.userId;
+      const groupKey = currentItem.telegramUserId;
       if (
         !previous[groupKey] ||
         previous[groupKey].createdAt < currentItem.createdAt
