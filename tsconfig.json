@@ -6,7 +6,8 @@
     "target": "es6",
     "moduleResolution": "node",
     "strict": true,    
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "sourceMap": true,
   },
   "exclude": ["./node_modules", "./dist"],
   "lib": ["es2015"]
