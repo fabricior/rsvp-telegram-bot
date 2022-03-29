@@ -9,19 +9,14 @@ type RsvpRequest = {
   rsvpOption: RsvpOption;
 };
 
-export async function rsvpViaTelegram(rsvpRequest: RsvpRequest): Promise<Game> {
+export async function rsvpViaTelegram(rsvpRequest: RsvpRequest): Promise<Game | null> {
   const game = await getUpcoming(rsvpRequest.telegramChatId)
 
   if (!game) {
-    throw new Error(`No upcoming games found`);
+    return null;
   }
 
-  const group = await getGroup(rsvpRequest.telegramChatId);
-  if (!group) {
-    throw new Error(`Group not found`);
-  }
-
-  const user = group.users?.find(u => u.telegramUserId === rsvpRequest.telegramUserId)
+  const user = game.group.users?.find(u => u.telegramUserId === rsvpRequest.telegramUserId)
   if (!user) {
     throw new Error(`User not found`);
   }

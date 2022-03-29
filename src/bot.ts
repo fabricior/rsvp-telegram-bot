@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import { computeRSVPStatus, getUpcoming } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
 import { Prisma } from "@prisma/client";
+import { rsvpViaTelegram } from "./rsvp";
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ export default function setup() {
       console.log(`Bot started for ChatId ${ctx.chat.id}`);
       ctx.reply(
         `Hello there! This group is now ready to use ${robotName} (${environmentName}).`
-      );      
+      );
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
@@ -39,7 +40,7 @@ export default function setup() {
       } else {
         handleUknownError(error);
       }
-    }   
+    }
   });
 
   bot.command("enroll", async (ctx) => {
@@ -50,11 +51,36 @@ export default function setup() {
         telegramChatId: ctx.chat.id,
         user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
       });
-      console.log(`User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`);
+      console.log(
+        `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
+      );
       ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
     } catch (error) {
       console.error(error);
       ctx.reply("Something went wrong enrolling user");
+    }
+  });
+
+  bot.command("yes", async (ctx) => {
+    console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+    const rsvpOption = "YES";
+
+    try {
+      const game = await rsvpViaTelegram({
+        telegramChatId: ctx.chat.id,
+        telegramUserId: ctx.from.id,
+        rsvpOption: rsvpOption,
+      });
+      if (game) {
+        console.log(`User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`);
+        ctx.reply(`User ${ctx.from.first_name} said ${rsvpOption}.`);
+      } else {
+        console.log(`User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`);
+        ctx.reply(`There are no upcoming games for this group.`);
+      }
+    } catch (error) {
+      console.error(error);
+      ctx.reply("Something went during RSVP user");
     }
   });
 
