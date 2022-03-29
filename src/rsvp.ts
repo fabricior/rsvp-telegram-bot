@@ -10,7 +10,7 @@ type RsvpRequest = {
 };
 
 export async function rsvpViaTelegram(rsvpRequest: RsvpRequest): Promise<Game> {
-  const game = await getUpcoming()
+  const game = await getUpcoming(rsvpRequest.telegramChatId)
 
   if (!game) {
     throw new Error(`No upcoming games found`);

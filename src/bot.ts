@@ -61,7 +61,7 @@ export default function setup() {
   bot.hears("cuantos", async (ctx, next) => {
     console.dir(ctx.state);
 
-    const game = await getUpcoming();
+    const game = await getUpcoming(ctx.chat.id);
     if (!game) {
       bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
       return;

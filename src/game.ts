@@ -1,7 +1,7 @@
-import { Game, Rsvp } from "@prisma/client";
+import { Game, Rsvp, Prisma } from "@prisma/client";
 import { db } from "./db";
 
-type InsertGameRequest = Omit<Game, "id" | "rsvps">
+type InsertGameRequest = Omit<Game, "id" | "rsvps">;
 
 export async function insertGame(request: InsertGameRequest): Promise<Game> {
   return await db.game.create({
@@ -13,12 +13,22 @@ export async function insertGame(request: InsertGameRequest): Promise<Game> {
   });
 }
 
-export async function getUpcoming(): Promise<Game | null> {
+export type GameWithGroup = Prisma.PromiseReturnType<typeof getUpcoming>;
+
+export async function getUpcoming(
+  telegramChatId: number
+) {
   const now = new Date();
   return await db.game.findFirst({
+    include: {
+      group: true
+    },
     where: {
       dateTime: {
         gt: now,
+      },
+      group: {
+        telegramChatId: telegramChatId,
       },
     },
     orderBy: { dateTime: "asc" },
