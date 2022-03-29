@@ -1,7 +1,7 @@
 import { Telegraf } from "telegraf";
 import dotenv from "dotenv";
 import { computeRSVPStatus, getUpcoming } from "./game";
-import { insertGroup } from "./group";
+import { enrollUserInGroup, insertGroup } from "./group";
 import { Prisma } from "@prisma/client";
 
 dotenv.config();
@@ -23,7 +23,9 @@ export default function setup() {
 
     const onSuccess = () => {
       console.log(`Bot started for ChatId ${ctx.chat.id}`);
-      ctx.reply(`Hello there! This group is now ready to use ${robotName} (${environmentName}).`);
+      ctx.reply(
+        `Hello there! This group is now ready to use ${robotName} (${environmentName}).`
+      );
     };
 
     const onError = (error: Error | Prisma.PrismaClientKnownRequestError) => {
@@ -41,6 +43,22 @@ export default function setup() {
     };
 
     insertGroup(ctx.chat.id).then(onSuccess, onError);
+  });
+
+  bot.command("enroll", async (ctx) => {
+    console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+
+    try {
+      await enrollUserInGroup({
+        telegramChatId: ctx.chat.id,
+        user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
+      });
+      console.log(`User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`);
+      ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
+    } catch (error) {
+      console.error(error);
+      ctx.reply("Something went wrong enrolling user");
+    }
   });
 
   bot.hears("cuantos", async (ctx, next) => {

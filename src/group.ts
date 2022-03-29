@@ -1,10 +1,45 @@
-import { Group } from ".prisma/client";
+import { Group, User } from "@prisma/client";
 import { db } from "./db";
 
 export async function insertGroup(telegramChatId: number): Promise<Group> {
   return await db.group.create({
     data: {
       telegramChatId: telegramChatId,
+    },
+  });
+}
+
+type EnrollUserRequest = {
+  telegramChatId: number;
+  user: Omit<User, "createdAt">;
+};
+
+export async function enrollUserInGroup(
+  request: EnrollUserRequest
+): Promise<Group> {
+  const group = await getGroup(request.telegramChatId);
+  if (!group) {
+    throw new Error("Group not found");
+  }
+
+  if (
+    group.users?.findIndex(
+      (u) => u.telegramUserId === request.user.telegramUserId
+    ) === -1
+  ) {
+    return group;
+  }
+
+  return await db.group.update({
+    where: { telegramChatId: request.telegramChatId },
+    data: {
+      users: {
+        push: {
+          telegramUserId: request.user.telegramUserId,
+          firstName: request.user.firstName,
+          createdAt: new Date(),
+        },
+      },
     },
   });
 }
