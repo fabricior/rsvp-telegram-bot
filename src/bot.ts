@@ -13,22 +13,21 @@ const robotName = process.env.ROBOT_NAME || "FulbitoYa";
 const environmentName = process.env.ENVIRONMENT || "test";
 
 export default function setup() {
-  bot.command("start", (ctx) => {
+  bot.command("start", async (ctx) => {
     console.log(`Starting bot for ChatId ${ctx.chat.id}`);
 
-    const handleUknownError = (error: Error) => {
+    const handleUknownError = (error: Error | unknown) => {
       console.error(error);
       ctx.reply("Something went wrong starting Bot");
     };
 
-    const onSuccess = () => {
+    try {
+      await insertGroup(ctx.chat.id);
       console.log(`Bot started for ChatId ${ctx.chat.id}`);
       ctx.reply(
         `Hello there! This group is now ready to use ${robotName} (${environmentName}).`
-      );
-    };
-
-    const onError = (error: Error | Prisma.PrismaClientKnownRequestError) => {
+      );      
+    } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
           ctx.reply(
@@ -40,9 +39,7 @@ export default function setup() {
       } else {
         handleUknownError(error);
       }
-    };
-
-    insertGroup(ctx.chat.id).then(onSuccess, onError);
+    }   
   });
 
   bot.command("enroll", async (ctx) => {
