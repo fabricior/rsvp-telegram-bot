@@ -34,7 +34,7 @@ export default function setup() {
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
 }
 
-const startCommandHandler = async (ctx: Ctx, next: () => Promise<void>) => {
+const startCommandHandler = async (ctx: Ctx) => {
   console.log(`Starting bot for ChatId ${ctx.chat.id}`);
 
   const handleUknownError = (error: Error | unknown) => {
@@ -60,12 +60,10 @@ const startCommandHandler = async (ctx: Ctx, next: () => Promise<void>) => {
     } else {
       handleUknownError(error);
     }
-  }
-
-  return next();
+  }  
 };
 
-const enrollCommandHandler = async (ctx: Ctx, next: () => Promise<void>) => {
+const enrollCommandHandler = async (ctx: Ctx) => {
   console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
@@ -81,11 +79,10 @@ const enrollCommandHandler = async (ctx: Ctx, next: () => Promise<void>) => {
     console.error(error);
     ctx.reply("Something went wrong enrolling user");
   }
-  return next();
 };
 
 const rsvpCommandHandler =
-  (rsvpOption: RsvpOption) => async (ctx: Ctx, next: () => Promise<void>) => {
+  (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
     console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
     try {
@@ -109,16 +106,15 @@ const rsvpCommandHandler =
       console.error(error);
       ctx.reply("Something went during RSVP user");
     }
-    return next();
   };
 
-const howManyHandler = async (ctx: Ctx, next: () => Promise<void>) => {
+const howManyHandler = async (ctx: Ctx) => {
   console.dir(ctx.state);
 
   const game = await getUpcoming(ctx.chat.id);
   if (!game) {
     bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
-    return next();
+    return;
   }
 
   ctx.reply(`Hello ${ctx.state.role}`);
@@ -129,5 +125,4 @@ const howManyHandler = async (ctx: Ctx, next: () => Promise<void>) => {
     ctx.chat.id,
     `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${status.no.length} `
   );
-  return next();
 };
