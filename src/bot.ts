@@ -1,9 +1,11 @@
-import { Telegraf } from "telegraf";
+import { Context, NarrowedContext, Telegraf } from "telegraf";
 import dotenv from "dotenv";
 import { getUpcoming } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
-import { Prisma } from "@prisma/client";
+import { Prisma, RsvpOption } from "@prisma/client";
 import { computeRSVPStatus, rsvpViaTelegram } from "./rsvp";
+import { Update } from "typegram/update";
+import { MountMap } from "telegraf/typings/telegram-types";
 
 dotenv.config();
 
@@ -13,60 +15,78 @@ const bot = new Telegraf(token);
 const robotName = process.env.ROBOT_NAME || "FulbitoYa";
 const environmentName = process.env.ENVIRONMENT || "test";
 
+type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
+
 export default function setup() {
-  bot.command("start", async (ctx, next) => {
-    console.log(`Starting bot for ChatId ${ctx.chat.id}`);
+  bot.command("start", startCommandHandler);
 
-    const handleUknownError = (error: Error | unknown) => {
-      console.error(error);
-      ctx.reply("Something went wrong starting Bot");
-    };
+  bot.command("enroll", enrollCommandHandler);
 
-    try {
-      await insertGroup(ctx.chat.id);
-      console.log(`Bot started for ChatId ${ctx.chat.id}`);
-      ctx.reply(
-        `Hello there! This group is now ready to use ${robotName} (${environmentName}).`
-      );
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === "P2002") {
-          ctx.reply(
-            `${robotName} (${environmentName}) is already started for current group.`
-          );
-        } else {
-          handleUknownError(error);
-        }
+  bot.command("yes", rsvpCommandHandler("YES"));
+  bot.command("no", rsvpCommandHandler("NO"));
+  bot.command("maybe", rsvpCommandHandler("MAYBE"));
+
+  bot.hears("cuantos", howManyHandler);
+
+  bot.launch();
+
+  process.once("SIGINT", () => bot.stop("SIGINT"));
+  process.once("SIGTERM", () => bot.stop("SIGTERM"));
+}
+
+const startCommandHandler = async (ctx: Ctx, next: () => Promise<void>) => {
+  console.log(`Starting bot for ChatId ${ctx.chat.id}`);
+
+  const handleUknownError = (error: Error | unknown) => {
+    console.error(error);
+    ctx.reply("Something went wrong starting Bot");
+  };
+
+  try {
+    await insertGroup(ctx.chat.id);
+    console.log(`Bot started for ChatId ${ctx.chat.id}`);
+    ctx.reply(
+      `Hello there! This group is now ready to use ${robotName} (${environmentName}).`
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        ctx.reply(
+          `${robotName} (${environmentName}) is already started for current group.`
+        );
       } else {
         handleUknownError(error);
       }
+    } else {
+      handleUknownError(error);
     }
+  }
 
-    return next();
-  });
+  return next();
+};
 
-  bot.command("enroll", async (ctx, next) => {
-    console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+const enrollCommandHandler = async (ctx: Ctx, next: () => Promise<void>) => {
+  console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
-    try {
-      await enrollUserInGroup({
-        telegramChatId: ctx.chat.id,
-        user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
-      });
-      console.log(
-        `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
-      );
-      ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
-    } catch (error) {
-      console.error(error);
-      ctx.reply("Something went wrong enrolling user");
-    }
-    return next();
-  });
+  try {
+    await enrollUserInGroup({
+      telegramChatId: ctx.chat.id,
+      user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
+    });
+    console.log(
+      `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
+    );
+    ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
+  } catch (error) {
+    console.error(error);
+    ctx.reply("Something went wrong enrolling user");
+  }
+  return next();
+};
 
-  bot.command("yes", async (ctx, next) => {
+const rsvpCommandHandler =
+  (rsvpOption: RsvpOption) => async (ctx: Ctx, next: () => Promise<void>) => {
     console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
-    const rsvpOption = "YES";
 
     try {
       const game = await rsvpViaTelegram({
@@ -75,10 +95,14 @@ export default function setup() {
         rsvpOption: rsvpOption,
       });
       if (game) {
-        console.log(`User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`);
+        console.log(
+          `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
+        );
         ctx.reply(`User ${ctx.from.first_name} said ${rsvpOption}.`);
       } else {
-        console.log(`User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`);
+        console.log(
+          `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
+        );
         ctx.reply(`There are no upcoming games for this group.`);
       }
     } catch (error) {
@@ -86,30 +110,24 @@ export default function setup() {
       ctx.reply("Something went during RSVP user");
     }
     return next();
-  });
+  };
 
-  bot.hears("cuantos", async (ctx, next) => {
-    console.dir(ctx.state);
+const howManyHandler = async (ctx: Ctx, next: () => Promise<void>) => {
+  console.dir(ctx.state);
 
-    const game = await getUpcoming(ctx.chat.id);
-    if (!game) {
-      bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
-      return next();
-    }
-
-    ctx.reply(`Hello ${ctx.state.role}`);
-
-    const status = computeRSVPStatus(game);
-
-    bot.telegram.sendMessage(
-      ctx.chat.id,
-      `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${status.no.length} `
-    );
+  const game = await getUpcoming(ctx.chat.id);
+  if (!game) {
+    bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
     return next();
-  });
+  }
 
-  bot.launch();
+  ctx.reply(`Hello ${ctx.state.role}`);
 
-  process.once("SIGINT", () => bot.stop("SIGINT"));
-  process.once("SIGTERM", () => bot.stop("SIGTERM"));
-}
+  const status = computeRSVPStatus(game);
+
+  bot.telegram.sendMessage(
+    ctx.chat.id,
+    `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${status.no.length} `
+  );
+  return next();
+};
