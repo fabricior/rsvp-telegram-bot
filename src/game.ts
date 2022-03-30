@@ -1,4 +1,4 @@
-import { Game, Rsvp, Prisma } from "@prisma/client";
+import { Game, Prisma } from "@prisma/client";
 import { db } from "./db";
 
 type InsertGameRequest = Omit<Game, "id" | "rsvps">;
