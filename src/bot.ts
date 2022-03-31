@@ -6,7 +6,6 @@ import { Prisma, RsvpOption } from "@prisma/client";
 import { computeRSVPStatus, rsvpViaTelegram } from "./rsvp";
 import { Update } from "typegram/update";
 import { MountMap } from "telegraf/typings/telegram-types";
-import { parse } from "path";
 import { parseDateISO } from "./dates";
 
 dotenv.config();
@@ -137,8 +136,11 @@ const howManyHandler = async (ctx: Ctx) => {
 
   const status = computeRSVPStatus(game);
 
-  bot.telegram.sendMessage(
-    ctx.chat.id,
-    `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${status.no.length} `
+  ctx.reply(
+    `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${
+      status.no.length
+    }\n\n ${status.yes
+      .map((value, index) => `${index + 1} ${value.telegramUserId}`)
+      .join("\n")}`
   );
 };
