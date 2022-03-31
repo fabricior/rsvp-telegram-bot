@@ -1,12 +1,19 @@
 import { Game, Prisma } from "@prisma/client";
 import { db } from "./db";
+import { getGroup } from "./group";
 
-type InsertGameRequest = Omit<Game, "id" | "rsvps">;
+type InsertGameRequest = Omit<Game, "id" | "rsvps" | "groupId"> & { telegramChatId: number};
 
 export async function insertGame(request: InsertGameRequest): Promise<Game> {
+
+  const group = await getGroup(request.telegramChatId);
+  if (!group) {
+    throw new Error("Group not found");
+  }
+
   return await db.game.create({
     data: {
-      groupId: request.groupId,
+      groupId: group.id,
       requiredPlayers: request.requiredPlayers,
       dateTime: request.dateTime,
     },

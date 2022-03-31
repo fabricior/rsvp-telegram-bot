@@ -1,11 +1,13 @@
 import { Context, NarrowedContext, Telegraf } from "telegraf";
 import dotenv from "dotenv";
-import { getUpcoming } from "./game";
+import { getUpcoming, insertGame } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
 import { Prisma, RsvpOption } from "@prisma/client";
 import { computeRSVPStatus, rsvpViaTelegram } from "./rsvp";
 import { Update } from "typegram/update";
 import { MountMap } from "telegraf/typings/telegram-types";
+import { parse } from "path";
+import { parseDateISO } from "./dates";
 
 dotenv.config();
 
@@ -21,6 +23,8 @@ export default function setup() {
   bot.command("start", startCommandHandler);
 
   bot.command("enroll", enrollCommandHandler);
+
+  bot.command("new", createGameHandler);
 
   bot.command("yes", rsvpCommandHandler("YES"));
   bot.command("no", rsvpCommandHandler("NO"));
@@ -60,7 +64,7 @@ const startCommandHandler = async (ctx: Ctx) => {
     } else {
       handleUknownError(error);
     }
-  }  
+  }
 };
 
 const enrollCommandHandler = async (ctx: Ctx) => {
@@ -81,43 +85,55 @@ const enrollCommandHandler = async (ctx: Ctx) => {
   }
 };
 
-const rsvpCommandHandler =
-  (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
-    console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+const createGameHandler = async (ctx: Ctx) => {
+  try {
+    const game = await insertGame({
+      telegramChatId: ctx.chat.id,
+      dateTime: parseDateISO("2022-03-30 17:00"),
+      requiredPlayers: 10,
+    });
 
-    try {
-      const game = await rsvpViaTelegram({
-        telegramChatId: ctx.chat.id,
-        telegramUserId: ctx.from.id,
-        rsvpOption: rsvpOption,
-      });
-      if (game) {
-        console.log(
-          `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
-        );
-        ctx.reply(`User ${ctx.from.first_name} said ${rsvpOption}.`);
-      } else {
-        console.log(
-          `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
-        );
-        ctx.reply(`There are no upcoming games for this group.`);
-      }
-    } catch (error) {
-      console.error(error);
-      ctx.reply("Something went during RSVP user");
+    ctx.reply(
+      `New Game has been scheduled for ${game.dateTime.toLocaleDateString()}`
+    );
+  } catch (error) {
+    console.error(error);
+    ctx.reply("Something went wrong creating a new game.");
+  }
+};
+
+const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
+  console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+
+  try {
+    const game = await rsvpViaTelegram({
+      telegramChatId: ctx.chat.id,
+      telegramUserId: ctx.from.id,
+      rsvpOption: rsvpOption,
+    });
+    if (game) {
+      console.log(
+        `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
+      );
+      ctx.reply(`User ${ctx.from.first_name} said ${rsvpOption}.`);
+    } else {
+      console.log(
+        `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
+      );
+      ctx.reply(`There are no upcoming games for this group.`);
     }
-  };
+  } catch (error) {
+    console.error(error);
+    ctx.reply("Something went during RSVP user");
+  }
+};
 
 const howManyHandler = async (ctx: Ctx) => {
-  console.dir(ctx.state);
-
   const game = await getUpcoming(ctx.chat.id);
   if (!game) {
     bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
     return;
   }
-
-  ctx.reply(`Hello ${ctx.state.role}`);
 
   const status = computeRSVPStatus(game);
 
