@@ -140,7 +140,14 @@ const howManyHandler = async (ctx: Ctx) => {
     `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${
       status.no.length
     }\n\n ${status.yes
-      .map((value, index) => `${index + 1} ${value.telegramUserId}`)
+      .map(
+        (value, index) =>
+          `${index + 1} ${
+            game.group.users.find(
+              (user) => user.telegramUserId === value.telegramUserId
+            )?.firstName
+          }`
+      )
       .join("\n")}`
   );
 };
