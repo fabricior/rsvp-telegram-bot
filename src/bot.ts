@@ -116,7 +116,9 @@ const createGameHandler = async (ctx: Ctx) => {
     });
 
     ctx.reply(
-      `A new game has been scheduled for ${game.dateTime.toLocaleDateString()} at ${game.dateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.\nNumber of required players: ${
+      `A new game has been ${getScheduledForDateTimeText(
+        game.dateTime
+      )}.\n\nMaximum number of players: ${
         game.requiredPlayers
       }\n\nRSVP by sending any of the below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.\n\nTo check the attendance of players, please use the /status command.`
     );
@@ -164,12 +166,21 @@ const statusHandler = async (ctx: Ctx) => {
   const status = computeRSVPStatus(game);
 
   ctx.reply(
-    `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${
-      status.no.length
-    }${status.details ? `\n\n${status.details}` : ""} ${
+    `Game ${getScheduledForDateTimeText(game.dateTime)}\n\nGoing: ${
+      status.yes.length
+    }\nNot going: ${status.no.length}\nMaybe: ${status.maybe.length}${
+      status.details ? `\n\n${status.details}` : ""
+    } ${
       status.unknown.length > 0
         ? `\n\nPlayers with pending RSVP:\n${status.unknown}`
         : "\n\nAll players in this group have replied."
     }`
   );
 };
+
+function getScheduledForDateTimeText(dateTime: Date) {
+  return `scheduled for ${dateTime.toLocaleDateString()} at ${dateTime.toLocaleTimeString(
+    [],
+    { hour: "2-digit", minute: "2-digit" }
+  )}`;
+}
