@@ -13,7 +13,7 @@ dotenv.config();
 const token = process.env.TELEGRAM_BOT_TOKEN || "";
 const bot = new Telegraf(token);
 
-const robotName = process.env.ROBOT_NAME || "FulbitoYa";
+const robotName = process.env.ROBOT_NAME || "RsvpBot";
 const environmentName = process.env.ENVIRONMENT || "test";
 
 type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
