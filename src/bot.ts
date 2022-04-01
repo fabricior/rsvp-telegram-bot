@@ -111,7 +111,7 @@ const createGameHandler = async (ctx: Ctx) => {
     });
 
     ctx.reply(
-      `New Game has been scheduled for ${game.dateTime.toLocaleDateString()}`
+      `New Game has been scheduled for ${game.dateTime.toLocaleDateString()} at ${game.dateTime.toLocaleTimeString()}. Number of required Players: ${game.requiredPlayers}\n\nRSVP by sending any of below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.`
     );
   } catch (error) {
     console.error(error);
