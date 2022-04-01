@@ -1,7 +1,7 @@
 {
-  "name": "fulbito-bot-nodejs",
+  "name": "rsvp-telegram-bot",
   "version": "0.0.1",
-  "description": "Fulbito Bot",
+  "description": "RSVP Telegram Bot",
   "main": "dist/index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn ./src/index.ts",
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fabricior/fulbito-bot-nodejs.git"
+    "url": "git+https://github.com/fabricior/rsvp-telegram-bot"
   },
   "author": "Fabricio Rateni",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/fabricior/fulbito-bot-nodejs/issues"
+    "url": "https://github.com/fabricior/rsvp-telegram-bot/issues"
   },
-  "homepage": "https://github.com/fabricior/fulbito-bot-nodejs#readme",
+  "homepage": "https://github.com/fabricior/rsvp-telegram-bot#readme",
   "devDependencies": {
     "@types/jest": "^27.4.1",
     "@types/node": "^17.0.23",
