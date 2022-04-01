@@ -18,7 +18,7 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 ## Getting started
 ### Setup Bot in a group chat
 
-⚠ Below steps assume you have already [created your own telegram bot](https://core.telegram.org/bots#3-how-do-i-create-a-bot) and you have either deployed this code somewhere *or* you are running it **locally**. In the future, I might add docker support to simplify the rollout to a prod environment. ATM, instructions to deploy to a prod environment would be rather manual, so I'll skip them for now. As mentioned earlier, you can run it locally. See the [Development section](#Development) for details.
+⚠ Below steps assume you have already [created your own telegram bot](https://core.telegram.org/bots#3-how-do-i-create-a-bot) and you have either deployed this code somewhere (*or* you are running it **locally**). In the future, I might add docker support to simplify the rollout to a prod environment. ATM, instructions to deploy to a prod environment would be rather manual, so I'll skip them for now. As mentioned earlier, you can run it locally. See the [Development section](#Development) for details.
 
 1. Add your bot as **Administrator** to a group chat.
 
