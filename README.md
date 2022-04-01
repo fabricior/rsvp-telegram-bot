@@ -2,7 +2,15 @@
 
 ## About
 
-Telegram bot to coordinate the attendance of players to games that require a specific number of players, such as Five-a-side footbal.
+Telegram bot to coordinate the attendance to games that require a specific/maximum number of players, such as Five-a-side footbal.
+
+### Tech stack
+
+- NodeJs
+- TypeScript
+- MongoDB
+- Prisma
+- Jest
 
 ## Getting started
 ### Setup Bot in a group chat
@@ -24,7 +32,7 @@ Telegram bot to coordinate the attendance of players to games that require a spe
     where:
     `YYYY-MM-DD` is the date to schedule the new game for
     `HH:MM` is the time to schedule the new game at
-    `MAX` is the maximun number of players
+    `MAX` is the maximum number of players
     
 For example, `/new 2022-04-19 20:00 10` will schedule a new game for 4/19/2022 at 08:00 PM with a max number of players set at 10.
     ![Screenshot of Sending /status and /new commands.](/assets/03-NewGame.png "Sending /status and /new commands").
