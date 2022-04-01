@@ -81,13 +81,13 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       console.log(
         `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
       );
-      ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
+      ctx.reply(`User '${ctx.from.first_name}' has been enrolled.`);
     } else {
       console.log(
         `User ${ctx.from.id} was already enrolled in chat ${ctx.chat.id}. No action was performed.`
       );
       ctx.reply(
-        `User ${ctx.from.first_name} was enrolled already. /enroll is a one-off action for each user.`
+        `User '${ctx.from.first_name}' was enrolled already. /enroll is a one-off action for each user.`
       );
     }
   } catch (error) {
@@ -143,7 +143,7 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
       console.log(
         `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
       );
-      ctx.reply(`User ${ctx.from.first_name} said ${rsvpOption}.`);
+      ctx.reply(`User '${ctx.from.first_name}' said '${rsvpOption}'.`);
     } else {
       console.log(
         `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
