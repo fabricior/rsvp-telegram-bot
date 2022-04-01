@@ -19,7 +19,7 @@ const environmentName = process.env.ENVIRONMENT || "test";
 type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
 
 export default function setup() {
-  bot.command("start", startCommandHandler);
+  bot.command("init", initCommandHandler);
 
   bot.command("enroll", enrollCommandHandler);
 
@@ -29,7 +29,7 @@ export default function setup() {
   bot.command("no", rsvpCommandHandler("NO"));
   bot.command("maybe", rsvpCommandHandler("MAYBE"));
 
-  bot.hears("cuantos", howManyHandler);
+  bot.command("status", statusHandler);
 
   bot.launch();
 
@@ -37,25 +37,28 @@ export default function setup() {
   process.once("SIGTERM", () => bot.stop("SIGTERM"));
 }
 
-const startCommandHandler = async (ctx: Ctx) => {
-  console.log(`Starting bot for ChatId ${ctx.chat.id}`);
+const initCommandHandler = async (ctx: Ctx) => {
+  console.log(`Initializing bot for ChatId ${ctx.chat.id}`);
 
   const handleUknownError = (error: Error | unknown) => {
     console.error(error);
-    ctx.reply("Something went wrong starting Bot");
+    ctx.reply("Something went wrong initializing Bot");
   };
+
+  const enrollReminder =
+    "Each player needs to send the /enroll command to let the bot know they want to interat with it. This needs to be done just once per user.";
 
   try {
     await insertGroup(ctx.chat.id);
-    console.log(`Bot started for ChatId ${ctx.chat.id}`);
+    console.log(`Bot initialized for ChatId ${ctx.chat.id}`);
     ctx.reply(
-      `Hello there! This group is now ready to use ${robotName} (${environmentName}).`
+      `Hello there! This group is now ready to use ${robotName} (${environmentName}).\n\n${enrollReminder}`
     );
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         ctx.reply(
-          `${robotName} (${environmentName}) is already started for current group.`
+          `${robotName} (${environmentName}) is already initialized for current group.\n\n${enrollReminder}`
         );
       } else {
         handleUknownError(error);
@@ -89,7 +92,9 @@ const enrollCommandHandler = async (ctx: Ctx) => {
     }
   } catch (error) {
     console.error(error);
-    ctx.reply("Something went wrong enrolling user");
+    ctx.reply(
+      "Something went wrong enrolling user. Has the bot being initialized for this group? Send /init and trye again."
+    );
   }
 };
 
@@ -111,11 +116,15 @@ const createGameHandler = async (ctx: Ctx) => {
     });
 
     ctx.reply(
-      `New Game has been scheduled for ${game.dateTime.toLocaleDateString()} at ${game.dateTime.toLocaleTimeString()}. Number of required Players: ${game.requiredPlayers}\n\nRSVP by sending any of below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.`
+      `A new game has been scheduled for ${game.dateTime.toLocaleDateString()} at ${game.dateTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.\nNumber of required players: ${
+        game.requiredPlayers
+      }\n\nRSVP by sending any of the below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.\n\nTo check the attendance of players, please use the /status command.`
     );
   } catch (error) {
     console.error(error);
-    ctx.reply("Something went wrong creating a new game.");
+    ctx.reply(
+      "Something went wrong creating a new game. Has the bot being initialized for this group? Send /init and try again."
+    );
   }
 };
 
@@ -145,7 +154,7 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
   }
 };
 
-const howManyHandler = async (ctx: Ctx) => {
+const statusHandler = async (ctx: Ctx) => {
   const game = await getUpcoming(ctx.chat.id);
   if (!game) {
     bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
