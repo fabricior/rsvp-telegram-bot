@@ -2,7 +2,7 @@
 
 ## About
 
-Telegram bot to coordinate the attendance to games that require a specific/maximum number of players, such as Five-a-side footbal.
+Telegram bot to coordinate the attendance to games that require a specific/maximum number of players, such as Five-a-side football.
 ## Tech stack
 
 - NodeJs
