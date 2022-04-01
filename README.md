@@ -7,6 +7,7 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 
 - NodeJs
 - TypeScript
+- telegraf
 - MongoDB
 - Prisma
 - Jest
