@@ -70,14 +70,23 @@ const enrollCommandHandler = async (ctx: Ctx) => {
   console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
-    await enrollUserInGroup({
+    const group = await enrollUserInGroup({
       telegramChatId: ctx.chat.id,
       user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
     });
-    console.log(
-      `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
-    );
-    ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
+    if (group) {
+      console.log(
+        `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
+      );
+      ctx.reply(`User ${ctx.from.first_name} has been enrolled.`);
+    } else {
+      console.log(
+        `User ${ctx.from.id} was already enrolled in chat ${ctx.chat.id}. No action was performed.`
+      );
+      ctx.reply(
+        `User ${ctx.from.first_name} was enrolled already. /enroll is a one-off action for each user.`
+      );
+    }
   } catch (error) {
     console.error(error);
     ctx.reply("Something went wrong enrolling user");
@@ -85,11 +94,20 @@ const enrollCommandHandler = async (ctx: Ctx) => {
 };
 
 const createGameHandler = async (ctx: Ctx) => {
+  const commandTextParts = ctx.update.message.text.split(" ");
+  if (commandTextParts.length < 4) {
+    ctx.reply(`There are no enough arguments in \`/new\` command.`);
+    return;
+  }
+  const [, dateRaw, timeRaw, requiredPlayersRaw] = commandTextParts;
+  const datetime = parseDateISO(`${dateRaw} ${timeRaw}`);
+  const requiredPlayers = parseInt(requiredPlayersRaw);
+
   try {
     const game = await insertGame({
       telegramChatId: ctx.chat.id,
-      dateTime: parseDateISO("2022-03-30 17:00"),
-      requiredPlayers: 10,
+      dateTime: datetime,
+      requiredPlayers: requiredPlayers,
     });
 
     ctx.reply(
@@ -139,15 +157,10 @@ const howManyHandler = async (ctx: Ctx) => {
   ctx.reply(
     `Going: ${status.yes.length}\nMaybe: ${status.maybe.length}\nNot going: ${
       status.no.length
-    }\n\n ${status.yes
-      .map(
-        (value, index) =>
-          `${index + 1} ${
-            game.group.users.find(
-              (user) => user.telegramUserId === value.telegramUserId
-            )?.firstName
-          }`
-      )
-      .join("\n")}`
+    }${status.details ? `\n\n${status.details}` : ""} ${
+      status.unknown.length > 0
+        ? `\n\nPlayers with pending RSVP:\n${status.unknown}`
+        : "\n\nAll players in this group have replied."
+    }`
   );
 };
