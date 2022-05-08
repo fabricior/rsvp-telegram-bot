@@ -7,6 +7,7 @@ import { computeRSVPStatus, rsvpViaTelegram } from "./rsvp";
 import { Update } from "typegram/update";
 import { MountMap } from "telegraf/typings/telegram-types";
 import { parseDateISO } from "./dates";
+import { addGuestViaTelegram } from "./guest";
 
 dotenv.config();
 
@@ -30,6 +31,8 @@ export default function setup() {
   bot.command("maybe", rsvpCommandHandler("MAYBE"));
 
   bot.command("status", statusHandler);
+
+  bot.command("guest_add", addGuestHandler);
 
   bot.launch();
 
@@ -152,7 +155,7 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
     }
   } catch (error) {
     console.error(error);
-    ctx.reply("Something went during RSVP user");
+    ctx.reply("Something went wrong during RSVP user");
   }
 };
 
@@ -167,7 +170,7 @@ const statusHandler = async (ctx: Ctx) => {
 
   ctx.reply(
     `Game ${getScheduledForDateTimeText(game.dateTime)}\n\nGoing: ${
-      status.yes.length
+      status.yes.length + status.guestCount
     }\nNot going: ${status.no.length}\nMaybe: ${status.maybe.length}${
       status.details ? `\n\n${status.details}` : ""
     } ${
@@ -176,6 +179,46 @@ const statusHandler = async (ctx: Ctx) => {
         : "\n\nAll players in this group have replied."
     }`
   );
+};
+
+const addGuestHandler = async (ctx: Ctx) => {
+  const commandTextParts = ctx.update.message.text.split(" ");
+  if (commandTextParts.length < 2) {
+    ctx.reply(`There are no enough arguments in \`/guest_add\` command.`);
+    return;
+  }
+
+  const [, guestName] = commandTextParts;
+
+  console.log(
+    `Adding Guest ${guestName} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
+  );
+
+  const request = {
+    telegramChatId: ctx.chat.id,
+    guestName: guestName,
+    invitedByTelegramUserId: ctx.from.id,
+  };
+
+  try {
+    const result = await addGuestViaTelegram(request);
+    if (result) {
+      console.log(
+        `Guest ${guestName} has added to game in chat ${ctx.chat.id}.`
+      );
+      ctx.reply(
+        `Guest '${guestName} (#${result.guest.guestNumber})' has been added.`
+      );
+    } else {
+      console.log(
+        `Guest ${guestName} cannot be added to game chat ${ctx.chat.id} because there are no upcoming games`
+      );
+      ctx.reply(`There are no upcoming games for this group.`);
+    }
+  } catch (error) {
+    console.error(error);
+    ctx.reply("Something went wrong adding guest.");
+  }
 };
 
 function getScheduledForDateTimeText(dateTime: Date) {

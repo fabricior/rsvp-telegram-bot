@@ -2,7 +2,7 @@ import { Game, Prisma } from "@prisma/client";
 import { db } from "./db";
 import { getGroup } from "./group";
 
-type InsertGameRequest = Omit<Game, "id" | "rsvps" | "groupId"> & { telegramChatId: number};
+type InsertGameRequest = Omit<Game, "id" | "rsvps" | "groupId" | "guests"> & { telegramChatId: number};
 
 export async function insertGame(request: InsertGameRequest): Promise<Game> {
 

@@ -34,6 +34,8 @@ model Game {
   createdAt       DateTime  @default(now()) @ignore
 
   rsvps           Rsvp[]
+  guests          Guest[]
+  
   group           Group @relation(fields: [groupId], references: [id])
   groupId         String @db.ObjectId
 
@@ -49,6 +51,13 @@ enum RsvpOption {
 type Rsvp {  
   telegramUserId  Int
   option          RsvpOption
+  createdAt       DateTime  @default(now())
+}
+
+type Guest {  
+  guestName                     String
+  invitedByTelegramUserId       Int
+  guestNumber                   Int
   createdAt       DateTime  @default(now())
 }
 

@@ -53,6 +53,10 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 
     ![Screenshot of Sending /status command.](/assets/05-Status.png "Sending /status command")
 
+4. To add guests, that is, users that are not part of the group chat, use `/guest_add GUEST-NAME`
+
+ For example, `/guest_add Richard` will add Richard to the upcoming game
+
 ## Roadmap
 
 Next feature to be added would be the ability to invite guests for a certain game.

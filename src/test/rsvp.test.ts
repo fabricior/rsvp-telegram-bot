@@ -5,6 +5,7 @@ test("RSVP status with all states", () => {
   // Arrange
   const dummyCreatedAtDateForPlayers = new Date(Date.UTC(2019, 4, 4, 1, 0, 0));
   const dummyCreatedAtDateForRsvps = new Date(Date.UTC(2022, 1, 1, 1, 0, 0));
+  const dummyCreatedAtDateForGuests = new Date(Date.UTC(2022, 1, 2, 1, 0, 0));
 
   const game: Game & { group: Group } = {
     dateTime: new Date(Date.UTC(2022, 4, 4, 23, 0, 0)),
@@ -15,6 +16,14 @@ test("RSVP status with all states", () => {
         telegramUserId: 456789,
         createdAt: dummyCreatedAtDateForRsvps,
         option: "YES",
+      },
+    ],
+    guests: [
+      {
+        invitedByTelegramUserId: 456789,
+        createdAt: dummyCreatedAtDateForGuests,
+        guestName: "John",
+        guestNumber: 8,
       },
     ],
     id: "game1",
@@ -50,7 +59,9 @@ test("RSVP status with all states", () => {
     ],
     no: [],
     maybe: [],
-    unknown: ['- Player1 ?'],
-    details: "1. Player2",
+    guestCount: 1,
+    unknown: ["- Player1 ?"],
+    details: "1. Player2\n2. John (guest #8 - Invited by Player2)",
+    maxNumberReached: false,
   });
 });

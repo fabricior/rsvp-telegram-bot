@@ -15,7 +15,9 @@ export type RSVPStatus = {
   no: Rsvp[];
   maybe: Rsvp[];
   unknown: string[];
+  guestCount: number;
   details: string;
+  maxNumberReached: boolean;
 };
 
 export async function rsvpViaTelegram(
@@ -35,10 +37,7 @@ export async function rsvpViaTelegram(
   }
 
   const rsvpStatus = computeRSVPStatus(game);
-  if (
-    rsvpStatus.yes.length >= game.requiredPlayers &&
-    rsvpRequest.rsvpOption === "YES"
-  ) {
+  if (rsvpStatus.maxNumberReached && rsvpRequest.rsvpOption === "YES") {
     const previousRsvp = game.rsvps?.find(
       (x) => x.telegramUserId === user.telegramUserId
     )?.option;
@@ -69,8 +68,10 @@ export function computeRSVPStatus(game: Game & { group: Group }): RSVPStatus {
     yes: [],
     no: [],
     maybe: [],
+    guestCount: 0,
     unknown: [],
     details: "",
+    maxNumberReached: false,
   };
 
   const status = userRsvps.reduce(
@@ -90,14 +91,19 @@ export function computeRSVPStatus(game: Game & { group: Group }): RSVPStatus {
     initialState
   );
 
+  status.guestCount = game.guests.length;
+
   status.details = `${status.yes
     .map(
-      (value, index) =>
-        `${index + 1}. ${
-          game.group.users.find(
-            (user) => user.telegramUserId === value.telegramUserId
-          )?.firstName
-        }`
+      (value, yesIndex) =>
+        `${yesIndex + 1}. ${findUserName(game, value.telegramUserId)}`
+    )
+    .join("\n")}\n${game.guests
+    .map(
+      (g, guestIndex) =>
+        `${status.yes.length + guestIndex + 1}. ${g.guestName} (guest #${
+          g.guestNumber
+        } - Invited by ${findUserName(game, g.invitedByTelegramUserId)})`
     )
     .join("\n")}`;
 
@@ -107,7 +113,10 @@ export function computeRSVPStatus(game: Game & { group: Group }): RSVPStatus {
       -1
   );
 
-  status.unknown = userThatHaveNoRsvped.map(user => `- ${user.firstName} ?`);
+  status.unknown = userThatHaveNoRsvped.map((user) => `- ${user.firstName} ?`);
+
+  status.maxNumberReached =
+    status.yes.length + status.guestCount >= game.requiredPlayers;
 
   return status;
 }
@@ -126,4 +135,15 @@ function getlatestRsvpPerUser(rsvps: Array<Rsvp>): Array<Rsvp> {
     }, {} as Record<string, Rsvp>);
 
   return Object.values(buildRecord());
+}
+
+function findUserName(game: GameWithGroup, telegramUserId: number): string {
+  if (game === null) {
+    return "";
+  }
+
+  return (
+    game.group.users.find((user) => user.telegramUserId === telegramUserId)
+      ?.firstName ?? ""
+  );
 }
