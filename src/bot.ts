@@ -7,7 +7,7 @@ import { computeRSVPStatus, rsvpViaTelegram } from "./rsvp";
 import { Update } from "typegram/update";
 import { MountMap } from "telegraf/typings/telegram-types";
 import { parseDateISO } from "./dates";
-import { addGuestViaTelegram } from "./guest";
+import { addGuestViaTelegram, deleteGuestViaTelegram } from "./guest";
 
 dotenv.config();
 
@@ -33,6 +33,7 @@ export default function setup() {
   bot.command("status", statusHandler);
 
   bot.command("guest_add", addGuestHandler);
+  bot.command("guest_remove", removeGuestHandler);
 
   bot.launch();
 
@@ -204,7 +205,7 @@ const addGuestHandler = async (ctx: Ctx) => {
     const result = await addGuestViaTelegram(request);
     if (result) {
       console.log(
-        `Guest ${guestName} has added to game in chat ${ctx.chat.id}.`
+        `Guest ${guestName} has been added to game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
         `Guest '${guestName} (#${result.guest.guestNumber})' has been added.`
@@ -218,6 +219,46 @@ const addGuestHandler = async (ctx: Ctx) => {
   } catch (error) {
     console.error(error);
     ctx.reply("Something went wrong adding guest.");
+  }
+};
+
+const removeGuestHandler = async (ctx: Ctx) => {
+  const commandTextParts = ctx.update.message.text.split(" ");
+  if (commandTextParts.length < 2) {
+    ctx.reply(`There are no enough arguments in \`/guest_remove\` command.`);
+    return;
+  }
+
+  const [, guestNumberRaw] = commandTextParts;
+
+  console.log(
+    `Removing Guest ${guestNumberRaw} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
+  );
+
+  const request = {
+    telegramChatId: ctx.chat.id,
+    guestNumber: parseInt(guestNumberRaw, 10),
+    deletedByTelegramUserId: ctx.from.id,
+  };
+
+  try {
+    const result = await deleteGuestViaTelegram(request);
+    if (result) {
+      console.log(
+        `Guest ${request.guestNumber} has been removed from game in chat ${ctx.chat.id}.`
+      );
+      ctx.reply(
+        `Guest '#${request.guestNumber}' has been removed.`
+      );
+    } else {
+      console.log(
+        `Guest ${request.guestNumber} cannot be removed from the game in chat ${ctx.chat.id} because there are no upcoming games`
+      );
+      ctx.reply(`There are no upcoming games for this group.`);
+    }
+  } catch (error) {
+    console.error(error);
+    ctx.reply("Something went wrong removing the guest.");
   }
 };
 
