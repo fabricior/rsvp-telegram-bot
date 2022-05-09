@@ -32,10 +32,14 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 ![Screenshot of Sending /enroll command.](/assets/02-Enroll.png "Sending /enroll command")
 
 4. Configure bot commands
-4.1 Open chat with @BotFather
-4.2 Send the `setcommands` command
-4.3 Select your bot
-4.4 Send below message:
+
+    4.1 Open chat with @BotFather
+
+    4.2 Send the `setcommands` command
+
+    4.3 Select your bot
+
+    4.4 Send below message:
 ```
 init - Initialize the robot.
 enroll - Each player needs to send this command to let the bot know they want to interact with it. This needs to be done just once per user.
