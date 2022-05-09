@@ -101,14 +101,16 @@ guest_remove - Removes a guest player. Usage: /guest_remove <number>
 
 1. Run `npm install`
 2. Create a `.env` and place it in the root folder. File context needs to be as follows and you will need to change the values accordingly.
+⚠ Do NOT enclose the values in "" as `docker run` would interpret those as part of the value.
+```
+DATABASE_URL=your mongoDb instance
+TELEGRAM_BOT_TOKEN=your bot token
+ROBOT_NAME=pick a name
+ENVIRONMENT=test, prod, etc
+```
 3. Run `npx prisma db push`
 4. (Optionally) Run `npx prisma db seed`
-```
-DATABASE_URL="your mongoDb instance"
-TELEGRAM_BOT_TOKEN="your bot token"             
-ROBOT_NAME = "pick a name"
-ENVIRONMENT="test, prod, etc"
-```
+
 ### Run locally
 
 `npm run dev`
@@ -124,3 +126,8 @@ ENVIRONMENT="test, prod, etc"
     `npx prisma db push`
     `npx prisma db seed`
 
+## Docker commands
+
+`docker build --tag rsvp-telegram-bot:latest .`
+
+`docker run --name my_bot --rm -i -t --env-file ./.env rsvp-telegram-bot node dist/index.js 

@@ -1,5 +1,4 @@
 import { Context, NarrowedContext, Telegraf } from "telegraf";
-import dotenv from "dotenv";
 import { getUpcoming, insertGame } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
 import { Prisma, RsvpOption } from "@prisma/client";
@@ -8,8 +7,6 @@ import { Update } from "typegram/update";
 import { MountMap } from "telegraf/typings/telegram-types";
 import { parseDateISO } from "./dates";
 import { addGuestViaTelegram, deleteGuestViaTelegram } from "./guest";
-
-dotenv.config();
 
 const token = process.env.TELEGRAM_BOT_TOKEN || "";
 const bot = new Telegraf(token);
