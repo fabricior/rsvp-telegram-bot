@@ -31,6 +31,23 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 
 ![Screenshot of Sending /enroll command.](/assets/02-Enroll.png "Sending /enroll command")
 
+4. Configure bot commands
+4.1 Open chat with @BotFather
+4.2 Send the `setcommands` command
+4.3 Select your bot
+4.4 Send below message:
+```
+init - Initialize the robot.
+enroll - Each player needs to send this command to let the bot know they want to interact with it. This needs to be done just once per user.
+new - creates a new game. Usage: /new YYYY-MM-DD HH:MM MAX
+yes - you are attending the upcoming game
+no - you are NOT attending the upcoming game
+maybe - you don't know yet if you can make it
+status - get details about the attendance of players
+guest_add - Add a guest player. Usage: /guest_add <name>
+guest_remove - Removes a guest player. Usage: /guest_remove <number>
+```
+
 ### Using the bot 
 
 1. To create a new game, send the `/new` command using following format: 
@@ -57,9 +74,14 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 
  For example, `/guest_add Richard` will add Richard to the upcoming game
 
+5. To remove guests, use `/guest_remove GUEST-NUMBER`
+
+ For example, `/guest_remove 2` will remove the guest number 2.
+
 ## Roadmap
 
-Next feature to be added would be the ability to invite guests for a certain game.
+- [x] Ability to add and remove guests for a certain game.
+- [ ] Docker Support.
 
 ## Development
 

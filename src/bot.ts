@@ -50,7 +50,7 @@ const initCommandHandler = async (ctx: Ctx) => {
   };
 
   const enrollReminder =
-    "Each player needs to send the /enroll command to let the bot know they want to interat with it. This needs to be done just once per user.";
+    "Each player needs to send the /enroll command to let the bot know they want to interact with it. This needs to be done just once per user.";
 
   try {
     await insertGroup(ctx.chat.id);
@@ -105,7 +105,7 @@ const enrollCommandHandler = async (ctx: Ctx) => {
 const createGameHandler = async (ctx: Ctx) => {
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 4) {
-    ctx.reply(`There are no enough arguments in \`/new\` command.`);
+    ctx.reply(`There are no enough arguments in \`/new\` command.\nUsage: /new YYYY-MM-DD HH:MM MAX`);
     return;
   }
   const [, dateRaw, timeRaw, requiredPlayersRaw] = commandTextParts;
@@ -124,7 +124,7 @@ const createGameHandler = async (ctx: Ctx) => {
         game.dateTime
       )}.\n\nMaximum number of players: ${
         game.requiredPlayers
-      }\n\nRSVP by sending any of the below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.\n\nTo check the attendance of players, please use the /status command.`
+      }\n\nRSVP by sending any of the below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.\n\nTo check the attendance of players, please use the /status command.\n\nTo add or remove guest players, use /guest_add and /guest_remove commands.`
     );
   } catch (error) {
     console.error(error);
@@ -185,7 +185,7 @@ const statusHandler = async (ctx: Ctx) => {
 const addGuestHandler = async (ctx: Ctx) => {
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 2) {
-    ctx.reply(`There are no enough arguments in \`/guest_add\` command.`);
+    ctx.reply(`There are no enough arguments in /guest_add command.\n\nUsage: /guest_add <name>`);
     return;
   }
 
@@ -225,7 +225,7 @@ const addGuestHandler = async (ctx: Ctx) => {
 const removeGuestHandler = async (ctx: Ctx) => {
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 2) {
-    ctx.reply(`There are no enough arguments in \`/guest_remove\` command.`);
+    ctx.reply(`There are no enough arguments in /guest_remove command. Usage: /guest_remove <number>`);
     return;
   }
 
