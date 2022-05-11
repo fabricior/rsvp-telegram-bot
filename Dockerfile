@@ -17,3 +17,5 @@ RUN npx prisma generate
 COPY tsconfig.json .
 
 RUN tsc --build tsconfig.json
+
+CMD [ "node", "dist/index.js" ]
