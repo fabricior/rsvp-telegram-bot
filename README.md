@@ -113,7 +113,9 @@ guest_remove - Removes a guest player. Usage: /guest_remove <number>
 
 1. Run `npm install`
 2. Create a `.env` and place it in the root folder. File content needs to be as follows and you will need to change the values accordingly.
+
 ⚠ Do NOT enclose the values in "" as `docker run` would interpret those as part of the value.
+
 ```
 DATABASE_URL=your mongoDb instance
 TELEGRAM_BOT_TOKEN=your bot token
