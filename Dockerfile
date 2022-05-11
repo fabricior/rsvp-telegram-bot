@@ -1,4 +1,4 @@
-FROM node:16.15-alpine3.15 as builder
+FROM node:16.15-alpine3.15
 
 RUN npm install -g typescript@4.6.3
 
