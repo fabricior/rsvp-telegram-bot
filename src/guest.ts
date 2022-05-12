@@ -1,6 +1,6 @@
 import { Game, Guest } from "@prisma/client";
 import { db } from "./db";
-import { GameWithGroup, getUpcoming } from "./game";
+import { GameWithGroupOrNull, getUpcoming } from "./game";
 import { computeRSVPStatus } from "./rsvp";
 
 type InsertGuestRequest = {
@@ -23,7 +23,7 @@ type AddGuestReturn = {
 export async function addGuestViaTelegram(
   request: InsertGuestRequest
 ): Promise<AddGuestReturn | null> {
-  const game: GameWithGroup = await getUpcoming(request.telegramChatId);
+  const game: GameWithGroupOrNull = await getUpcoming(request.telegramChatId);
 
   if (!game) {
     return null;
@@ -65,7 +65,7 @@ export async function addGuestViaTelegram(
 export async function deleteGuestViaTelegram(
   request: DeleteGuestRequest
 ): Promise<Game | null> {
-  const game: GameWithGroup = await getUpcoming(request.telegramChatId);
+  const game: GameWithGroupOrNull = await getUpcoming(request.telegramChatId);
 
   if (!game) {
     return null;

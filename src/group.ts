@@ -1,10 +1,14 @@
 import { Group, User } from "@prisma/client";
 import { db } from "./db";
 
-export async function insertGroup(telegramChatId: number): Promise<Group> {
+export async function insertGroup(
+  telegramChatId: number,
+  language: string
+): Promise<Group> {
   return await db.group.create({
     data: {
-      telegramChatId: telegramChatId,
+      telegramChatId,
+      language,
     },
   });
 }

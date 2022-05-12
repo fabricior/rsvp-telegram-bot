@@ -8,6 +8,10 @@ const resources = {
       },
       enrollReminder: `Each player needs to send the /enroll command to let the bot know they want to interact with it. This needs to be done just once per user.`,
       initialized: {
+        notEnoughArgs:
+          "There are no enough arguments in /init command.\n\nUsage:\n/init en \nfor English\n\n/init es \npara Español",
+        invalidLanguage:
+          "Unsupported language.\n\nUsage:\n/init en \nfor English\n\n/init es \npara Español",
         ok: `Hello there! This group is now ready to use {{robotName}} ({{environmentName}}).\n\n$t(enrollReminder)`,
         already:
           "{{robotName}} ({{environmentName}}) is already initialized for current group.\n\n$t(enrollReminder)",
@@ -28,7 +32,7 @@ const resources = {
       guestAdded: {
         notEnoughArgs:
           "There are no enough arguments in /guest_add command.\n\nUsage: /guest_add <name>`",
-        ok: "Guest '{{guestName}} (#${{guestNumber}})' has been added.",
+        ok: "Guest '{{guestName}} (#{{guestNumber}})' has been added.",
       },
       guestRemoved: {
         notEnoughArgs:
@@ -58,6 +62,10 @@ const resources = {
       },
       enrollReminder: `Cada jugador debe enviar el comando /enroll para indicar que desean interactuar con el bot. Esto es necesario solo una vez por cada usuario.`,
       initialized: {
+        notEnoughArgs:
+          "There are no enough arguments in /init command.\n\nUsage:\n/init en \nfor English\n\n/init es \npara Español",
+        invalidLanguage:
+          "Unsupported language.\n\nUsage:\n/init en \nfor English\n\n/init es \npara Español",
         ok: `Hola! Este grupo esta listo para usar {{robotName}} ({{environmentName}}).\n\n$t(enrollReminder)`,
         already:
           "{{robotName}} ({{environmentName}}) ya ha sido initializado en este grupo.\n\n$t(enrollReminder)",
@@ -79,7 +87,7 @@ const resources = {
       guestAdded: {
         notEnoughArgs:
           "Argumentos insuficientes en la llamada al comando /guest_add\n\nModo de Uso: /guest_add <name>`",
-        ok: "El invitado '{{guestName}} (#${{guestNumber}})' ha sido agregado.",
+        ok: "El invitado '{{guestName}} (#{{guestNumber}})' ha sido agregado.",
       },
       guestRemoved: {
         notEnoughArgs:

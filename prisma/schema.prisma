@@ -12,7 +12,8 @@ datasource db {
 
 model Group {
   id              String @id @default(auto()) @map("_id") @db.ObjectId
-  telegramChatId  Int @unique  
+  telegramChatId  Int @unique
+  language        String  
   createdAt       DateTime  @default(now()) @ignore
   users           User[]
   games           Game[]

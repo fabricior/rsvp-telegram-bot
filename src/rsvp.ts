@@ -1,6 +1,6 @@
 import { Game, Group, Rsvp } from "@prisma/client";
 import { db } from "./db";
-import { GameWithGroup, getUpcoming } from "./game";
+import { GameWithGroupOrNull, getUpcoming } from "./game";
 
 type RsvpOption = "YES" | "NO" | "MAYBE";
 
@@ -23,7 +23,7 @@ export type RSVPStatus = {
 export async function rsvpViaTelegram(
   rsvpRequest: RsvpRequest
 ): Promise<Game | null> {
-  const game: GameWithGroup = await getUpcoming(rsvpRequest.telegramChatId);
+  const game: GameWithGroupOrNull = await getUpcoming(rsvpRequest.telegramChatId);
 
   if (!game) {
     return null;
@@ -137,7 +137,7 @@ function getlatestRsvpPerUser(rsvps: Array<Rsvp>): Array<Rsvp> {
   return Object.values(buildRecord());
 }
 
-function findUserName(game: GameWithGroup, telegramUserId: number): string {
+function findUserName(game: GameWithGroupOrNull, telegramUserId: number): string {
   if (game === null) {
     return "";
   }

@@ -18,8 +18,10 @@ const environmentName = process.env.ENVIRONMENT || "test";
 
 type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
 
+const defaultLanguage = "en";
+
 i18next.init({
-  lng: "en",
+  lng: defaultLanguage,
   debug: true,
   resources: resources,
   fallbackLng: "en",
@@ -50,13 +52,30 @@ export default function setupBot() {
 const initCommandHandler = async (ctx: Ctx) => {
   console.log(`Initializing bot for ChatId ${ctx.chat.id}`);
 
+  const commandTextParts = ctx.update.message.text.split(" ");
+  if (commandTextParts.length < 2) {
+    ctx.reply(i18next.t("initialized.notEnoughArgs"));
+    return;
+  }
+
+  const [, language] = commandTextParts;
+
+  if (language !== "en" && language !== "es") {
+    ctx.reply(i18next.t("initialized.invalidLanguage"));
+    return;
+  }
+
   const handleUknownError = (error: Error | unknown) => {
     console.error(error);
     ctx.reply(i18next.t("uknownError.init"));
   };
 
   try {
-    await insertGroup(ctx.chat.id);
+    if (language !== defaultLanguage) {
+      await i18next.changeLanguage(language);
+    }
+
+    await insertGroup(ctx.chat.id, language);
     console.log(`Bot initialized for ChatId ${ctx.chat.id}`);
     ctx.reply(i18next.t("initialized.ok", { robotName, environmentName }));
   } catch (error) {
@@ -83,6 +102,7 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
     });
     if (group) {
+      await ensureLanguage(group.language)
       console.log(
         `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
       );
@@ -112,18 +132,20 @@ const createGameHandler = async (ctx: Ctx) => {
   const requiredPlayers = parseInt(requiredPlayersRaw);
 
   try {
-    const game = await insertGame({
+    const result = await insertGame({
       telegramChatId: ctx.chat.id,
       dateTime: datetime,
       requiredPlayers: requiredPlayers,
     });
 
-    const gameDateTime = getScheduledForDateTimeText(game.dateTime);
+    await ensureLanguage(result.group.language)
+
+    const gameDateTime = getScheduledForDateTimeText(result.game.dateTime);
 
     ctx.reply(
       i18next.t("gameCreated.ok", {
         gameDateTime,
-        requiredPlayers: game.requiredPlayers,
+        requiredPlayers: result.game.requiredPlayers,
       })
     );
   } catch (error) {
@@ -166,6 +188,8 @@ const statusHandler = async (ctx: Ctx) => {
     ctx.reply(i18next.t("noUpcomingGames"));
     return;
   }
+
+  await ensureLanguage(game.group.language)
 
   const status = computeRSVPStatus(game);
   const gameDateTime = getScheduledForDateTimeText(game.dateTime);
@@ -289,4 +313,10 @@ function getScheduledForDateTimeText(dateTime: Date) {
       },
     },
   });
+}
+
+async function ensureLanguage(language: string) {
+  if (language !== i18next.language) {
+    await i18next.changeLanguage(language);
+  }
 }
