@@ -1,4 +1,6 @@
 import { Context, NarrowedContext, Telegraf } from "telegraf";
+import i18next from "i18next";
+import resources from "./translations";
 import { getUpcoming, insertGame } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
 import { Prisma, RsvpOption } from "@prisma/client";
@@ -15,6 +17,13 @@ const robotName = process.env.ROBOT_NAME || "RsvpBot";
 const environmentName = process.env.ENVIRONMENT || "test";
 
 type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
+
+i18next.init({
+  lng: "en",
+  debug: true,
+  resources: resources,
+  fallbackLng: "en",
+});
 
 export default function setupBot() {
   bot.command("init", initCommandHandler);
@@ -43,23 +52,18 @@ const initCommandHandler = async (ctx: Ctx) => {
 
   const handleUknownError = (error: Error | unknown) => {
     console.error(error);
-    ctx.reply("Something went wrong initializing Bot");
+    ctx.reply(i18next.t("uknownError.init"));
   };
-
-  const enrollReminder =
-    "Each player needs to send the /enroll command to let the bot know they want to interact with it. This needs to be done just once per user.";
 
   try {
     await insertGroup(ctx.chat.id);
     console.log(`Bot initialized for ChatId ${ctx.chat.id}`);
-    ctx.reply(
-      `Hello there! This group is now ready to use ${robotName} (${environmentName}).\n\n${enrollReminder}`
-    );
+    ctx.reply(i18next.t("initialized.ok", { robotName, environmentName }));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
         ctx.reply(
-          `${robotName} (${environmentName}) is already initialized for current group.\n\n${enrollReminder}`
+          i18next.t("initialized.already", { robotName, environmentName })
         );
       } else {
         handleUknownError(error);
@@ -82,27 +86,25 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       console.log(
         `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
       );
-      ctx.reply(`User '${ctx.from.first_name}' has been enrolled.`);
+      ctx.reply(i18next.t("enroll.ok", { firstName: ctx.from.first_name }));
     } else {
       console.log(
         `User ${ctx.from.id} was already enrolled in chat ${ctx.chat.id}. No action was performed.`
       );
       ctx.reply(
-        `User '${ctx.from.first_name}' was enrolled already. /enroll is a one-off action for each user.`
+        i18next.t("enroll.already", { firstName: ctx.from.first_name })
       );
     }
   } catch (error) {
     console.error(error);
-    ctx.reply(
-      "Something went wrong enrolling user. Has the bot being initialized for this group? Send /init and trye again."
-    );
+    ctx.reply(i18next.t("uknownError.enroll"));
   }
 };
 
 const createGameHandler = async (ctx: Ctx) => {
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 4) {
-    ctx.reply(`There are no enough arguments in \`/new\` command.\nUsage: /new YYYY-MM-DD HH:MM MAX`);
+    ctx.reply(i18next.t("gameCreated.notEnoughArgs"));
     return;
   }
   const [, dateRaw, timeRaw, requiredPlayersRaw] = commandTextParts;
@@ -116,18 +118,17 @@ const createGameHandler = async (ctx: Ctx) => {
       requiredPlayers: requiredPlayers,
     });
 
+    const gameDateTime = getScheduledForDateTimeText(game.dateTime);
+
     ctx.reply(
-      `A new game has been ${getScheduledForDateTimeText(
-        game.dateTime
-      )}.\n\nMaximum number of players: ${
-        game.requiredPlayers
-      }\n\nRSVP by sending any of the below commands:\n/yes if you are planning to attend.\n/no if you can't make it.\n/maybe if you are not sure.\n\nYour responses can be changed later at any time.\n\nTo check the attendance of players, please use the /status command.\n\nTo add or remove guest players, use /guest_add and /guest_remove commands.`
+      i18next.t("gameCreated.ok", {
+        gameDateTime,
+        requiredPlayers: game.requiredPlayers,
+      })
     );
   } catch (error) {
     console.error(error);
-    ctx.reply(
-      "Something went wrong creating a new game. Has the bot being initialized for this group? Send /init and try again."
-    );
+    ctx.reply(i18next.t("uknownError.newGame"));
   }
 };
 
@@ -144,45 +145,55 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
       console.log(
         `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
       );
-      ctx.reply(`User '${ctx.from.first_name}' said '${rsvpOption}'.`);
+      ctx.reply(
+        i18next.t("rsvp.ok", { firstName: ctx.from.first_name, rsvpOption })
+      );
     } else {
       console.log(
         `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
       );
-      ctx.reply(`There are no upcoming games for this group.`);
+      ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
     console.error(error);
-    ctx.reply("Something went wrong during RSVP user");
+    ctx.reply(i18next.t("uknownError.rsvp"));
   }
 };
 
 const statusHandler = async (ctx: Ctx) => {
   const game = await getUpcoming(ctx.chat.id);
   if (!game) {
-    bot.telegram.sendMessage(ctx.chat.id, "No upcoming games found.");
+    ctx.reply(i18next.t("noUpcomingGames"));
     return;
   }
 
   const status = computeRSVPStatus(game);
+  const gameDateTime = getScheduledForDateTimeText(game.dateTime);
+  const goingCount = status.yes.length + status.guestCount;
+  const detailsSection = status.details ? `\n\n${status.details}` : "";
+  const summary =
+    status.unknown.length > 0
+      ? `${i18next.t("status.playersWithPendingRsvp", {
+          unknownList: status.unknown,
+        })}`
+      : i18next.t("status.allReplied");
 
   ctx.reply(
-    `Game ${getScheduledForDateTimeText(game.dateTime)}\n\nGoing: ${
-      status.yes.length + status.guestCount
-    }\nNot going: ${status.no.length}\nMaybe: ${status.maybe.length}${
-      status.details ? `\n\n${status.details}` : ""
-    } ${
-      status.unknown.length > 0
-        ? `\n\nPlayers with pending RSVP:\n${status.unknown}`
-        : "\n\nAll players in this group have replied."
-    }`
+    i18next.t("status.main", {
+      gameDateTime,
+      goingCount,
+      notGoingCount: status.no.length,
+      maybeCount: status.maybe.length,
+      summary,
+      detailsSection,
+    })
   );
 };
 
 const addGuestHandler = async (ctx: Ctx) => {
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 2) {
-    ctx.reply(`There are no enough arguments in /guest_add command.\n\nUsage: /guest_add <name>`);
+    ctx.reply(i18next.t("guestAdded.notEnoughArgs"));
     return;
   }
 
@@ -205,24 +216,27 @@ const addGuestHandler = async (ctx: Ctx) => {
         `Guest ${guestName} has been added to game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
-        `Guest '${guestName} (#${result.guest.guestNumber})' has been added.`
+        i18next.t("guestAdded.ok", {
+          guestName,
+          guestNumber: result.guest.guestNumber,
+        })
       );
     } else {
       console.log(
         `Guest ${guestName} cannot be added to game chat ${ctx.chat.id} because there are no upcoming games`
       );
-      ctx.reply(`There are no upcoming games for this group.`);
+      ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
     console.error(error);
-    ctx.reply("Something went wrong adding guest.");
+    ctx.reply(i18next.t("uknownError.addGuest"));
   }
 };
 
 const removeGuestHandler = async (ctx: Ctx) => {
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 2) {
-    ctx.reply(`There are no enough arguments in /guest_remove command. Usage: /guest_remove <number>`);
+    ctx.reply(i18next.t("guestRemoved.notEnoughArgs"));
     return;
   }
 
@@ -245,23 +259,34 @@ const removeGuestHandler = async (ctx: Ctx) => {
         `Guest ${request.guestNumber} has been removed from game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
-        `Guest '#${request.guestNumber}' has been removed.`
+        i18next.t("guestRemoved.ok", {
+          guestNumber: request.guestNumber,
+        })
       );
     } else {
       console.log(
         `Guest ${request.guestNumber} cannot be removed from the game in chat ${ctx.chat.id} because there are no upcoming games`
       );
-      ctx.reply(`There are no upcoming games for this group.`);
+      ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
     console.error(error);
-    ctx.reply("Something went wrong removing the guest.");
+    ctx.reply(i18next.t("uknownError.removeGuest"));
   }
 };
 
 function getScheduledForDateTimeText(dateTime: Date) {
-  return `scheduled for ${dateTime.toLocaleDateString()} at ${dateTime.toLocaleTimeString(
-    [],
-    { hour: "2-digit", minute: "2-digit" }
-  )}`;
+  return i18next.t("scheduledForDateTimeText", {
+    value: dateTime,
+    formatParams: {
+      value: {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+      },
+    },
+  });
 }
