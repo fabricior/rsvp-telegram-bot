@@ -16,7 +16,7 @@ const environmentName = process.env.ENVIRONMENT || "test";
 
 type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
 
-export default function setup() {
+export default function setupBot() {
   bot.command("init", initCommandHandler);
 
   bot.command("enroll", enrollCommandHandler);

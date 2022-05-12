@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
-import setup from "./bot";
+import setupBot from "./bot";
 
 dotenv.config();
-setup()
+setupBot()
+
