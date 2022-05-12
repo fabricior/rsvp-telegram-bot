@@ -60,9 +60,11 @@ Please refer to Telegram documentation to [create your own telegram bot](https:/
 
 4. Run the container
 
-Either locally using `docker -run ` or using a Cloud provider.
+Either locally / on premise using `docker -run ` or using a Cloud provider.
 
 In any case, make sure the runtime gets the required environment variables. See `.env.template` and the [Development section](#Development) for details.
+
+There is a health-check endpoint available at port 8080 by default.
 
 **Alternative**: instead of running a container, you can run a debug version of this repo locally. See the [Development section](#Development) for details.
 
@@ -128,6 +130,10 @@ ENVIRONMENT=test, prod, etc
 ### Run locally
 
 `npm run dev`
+
+or 
+
+`docker run --rm -i -t --env-file ./.env <image-name>`
 
 ### Run tests
 
