@@ -42,6 +42,11 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 
     - For example, `/guest_remove 2` will remove the guest number 2.
 
+## Supported Languages
+
+- `en` English
+- `es` Español
+
 ## How to deploy and use your own instance of this bot
 
 1. Create your own Telegram bot
@@ -72,7 +77,7 @@ There is a health-check endpoint available at port 8080 by default.
 
     5.1 Add your bot as **Administrator** to a group chat.
     
-    5.2 Send `/init` command
+    5.2 Send `/init <language>` command
             
     ![Screenshot of Sending /init command.](/assets/01-Init.png "Sending /init command")
     
