@@ -30,6 +30,7 @@ test("RSVP status with all states", () => {
     group: {
       id: "group1",
       telegramChatId: 999,
+      language: "en",
       users: [
         {
           firstName: "Player1",
