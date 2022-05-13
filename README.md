@@ -120,6 +120,7 @@ guest_remove - Removes a guest player. Usage: /guest_remove <number>
 - Node v16.x or later
 - A MongoDb instance configured as replica set.
 - A telegram bot token.
+- Docker (optional)
 
 ### Setup
 
