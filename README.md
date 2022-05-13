@@ -11,6 +11,7 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 - MongoDB
 - Prisma
 - Jest
+- Docker
 
 ### Features overview
 
