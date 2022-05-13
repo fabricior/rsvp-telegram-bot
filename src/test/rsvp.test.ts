@@ -1,4 +1,4 @@
-import { Game, Group } from "@prisma/client";
+import { RsvpOption } from "@prisma/client";
 import { computeRSVPStatus } from "../rsvp";
 
 test("RSVP status with all states", () => {
@@ -7,7 +7,9 @@ test("RSVP status with all states", () => {
   const dummyCreatedAtDateForRsvps = new Date(Date.UTC(2022, 1, 1, 1, 0, 0));
   const dummyCreatedAtDateForGuests = new Date(Date.UTC(2022, 1, 2, 1, 0, 0));
 
-  const game: Game & { group: Group } = {
+  const rsvpYes: RsvpOption = "YES";
+
+  const game = {
     dateTime: new Date(Date.UTC(2022, 4, 4, 23, 0, 0)),
     requiredPlayers: 10,
     groupId: "group1",
@@ -15,7 +17,7 @@ test("RSVP status with all states", () => {
       {
         telegramUserId: 456789,
         createdAt: dummyCreatedAtDateForRsvps,
-        option: "YES",
+        option: rsvpYes,
       },
     ],
     guests: [
@@ -27,27 +29,28 @@ test("RSVP status with all states", () => {
       },
     ],
     id: "game1",
-    group: {
-      id: "group1",
-      telegramChatId: 999,
-      language: "en",
-      users: [
-        {
-          firstName: "Player1",
-          createdAt: dummyCreatedAtDateForPlayers,
-          telegramUserId: 123456789,
-        },
-        {
-          firstName: "Player2",
-          createdAt: dummyCreatedAtDateForPlayers,
-          telegramUserId: 456789,
-        },
-      ],
-    },
+  };
+
+  const group = {
+    id: "group1",
+    telegramChatId: 999,
+    language: "en",
+    users: [
+      {
+        firstName: "Player1",
+        createdAt: dummyCreatedAtDateForPlayers,
+        telegramUserId: 123456789,
+      },
+      {
+        firstName: "Player2",
+        createdAt: dummyCreatedAtDateForPlayers,
+        telegramUserId: 456789,
+      },
+    ],
   };
 
   // Act
-  const actual = computeRSVPStatus(game);
+  const actual = computeRSVPStatus(game, group);
 
   // Assert
   expect(actual).toStrictEqual({

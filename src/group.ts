@@ -14,6 +14,7 @@ export async function insertGroup(
 }
 
 type EnrollUserRequest = {
+  group: Group;
   telegramChatId: number;
   user: Omit<User, "createdAt">;
 };
@@ -21,13 +22,8 @@ type EnrollUserRequest = {
 export async function enrollUserInGroup(
   request: EnrollUserRequest
 ): Promise<Group | null> {
-  const group = await getGroup(request.telegramChatId);
-  if (!group) {
-    throw new Error("Group not found");
-  }
-
   if (
-    group.users?.findIndex(
+    request.group.users?.findIndex(
       (u) => u.telegramUserId === request.user.telegramUserId
     ) !== -1
   ) {

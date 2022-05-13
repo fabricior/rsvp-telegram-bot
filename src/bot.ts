@@ -9,6 +9,7 @@ import { Update } from "typegram/update";
 import { MountMap } from "telegraf/typings/telegram-types";
 import { parseDateISO } from "./dates";
 import { addGuestViaTelegram, deleteGuestViaTelegram } from "./guest";
+import { groupMiddleware } from "./middleware";
 
 const token = process.env.TELEGRAM_BOT_TOKEN || "";
 const bot = new Telegraf(token);
@@ -22,10 +23,11 @@ const defaultLanguage = "en";
 
 i18next.init({
   lng: defaultLanguage,
-  debug: true,
   resources: resources,
   fallbackLng: "en",
 });
+
+bot.use(groupMiddleware);
 
 export default function setupBot() {
   bot.command("init", initCommandHandler);
@@ -97,12 +99,13 @@ const enrollCommandHandler = async (ctx: Ctx) => {
   console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
-    const group = await enrollUserInGroup({
+    const group = getGroupFromCtxOrThrowException(ctx);
+    const modifiedGroup = await enrollUserInGroup({
+      group: group,
       telegramChatId: ctx.chat.id,
       user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
     });
-    if (group) {
-      await ensureLanguage(group.language)
+    if (modifiedGroup) {
       console.log(
         `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
       );
@@ -132,20 +135,23 @@ const createGameHandler = async (ctx: Ctx) => {
   const requiredPlayers = parseInt(requiredPlayersRaw);
 
   try {
-    const result = await insertGame({
-      telegramChatId: ctx.chat.id,
+    const group = getGroupFromCtxOrThrowException(ctx);
+    const game = await insertGame({
       dateTime: datetime,
       requiredPlayers: requiredPlayers,
+      group: group,
     });
 
-    await ensureLanguage(result.group.language)
+    if (!game) {
+      throw new Error("Game cannot be added");
+    }
 
-    const gameDateTime = getScheduledForDateTimeText(result.game.dateTime);
+    const gameDateTime = getScheduledForDateTimeText(game.dateTime);
 
     ctx.reply(
       i18next.t("gameCreated.ok", {
         gameDateTime,
-        requiredPlayers: result.game.requiredPlayers,
+        requiredPlayers: game.requiredPlayers,
       })
     );
   } catch (error) {
@@ -158,7 +164,10 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
   console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
+    const group = getGroupFromCtxOrThrowException(ctx);
+
     const game = await rsvpViaTelegram({
+      group,
       telegramChatId: ctx.chat.id,
       telegramUserId: ctx.from.id,
       rsvpOption: rsvpOption,
@@ -189,29 +198,33 @@ const statusHandler = async (ctx: Ctx) => {
     return;
   }
 
-  await ensureLanguage(game.group.language)
+  try {
+    const group = getGroupFromCtxOrThrowException(ctx);
+    const status = computeRSVPStatus(game, group);
+    const gameDateTime = getScheduledForDateTimeText(game.dateTime);
+    const goingCount = status.yes.length + status.guestCount;
+    const detailsSection = status.details ? `\n\n${status.details}` : "";
+    const summary =
+      status.unknown.length > 0
+        ? `${i18next.t("status.playersWithPendingRsvp", {
+            unknownList: status.unknown,
+          })}`
+        : i18next.t("status.allReplied");
 
-  const status = computeRSVPStatus(game);
-  const gameDateTime = getScheduledForDateTimeText(game.dateTime);
-  const goingCount = status.yes.length + status.guestCount;
-  const detailsSection = status.details ? `\n\n${status.details}` : "";
-  const summary =
-    status.unknown.length > 0
-      ? `${i18next.t("status.playersWithPendingRsvp", {
-          unknownList: status.unknown,
-        })}`
-      : i18next.t("status.allReplied");
-
-  ctx.reply(
-    i18next.t("status.main", {
-      gameDateTime,
-      goingCount,
-      notGoingCount: status.no.length,
-      maybeCount: status.maybe.length,
-      summary,
-      detailsSection,
-    })
-  );
+    ctx.reply(
+      i18next.t("status.main", {
+        gameDateTime,
+        goingCount,
+        notGoingCount: status.no.length,
+        maybeCount: status.maybe.length,
+        summary,
+        detailsSection,
+      })
+    );
+  } catch (error) {
+    console.error(error);
+    ctx.reply(i18next.t("uknownError.status"));
+  }
 };
 
 const addGuestHandler = async (ctx: Ctx) => {
@@ -227,14 +240,15 @@ const addGuestHandler = async (ctx: Ctx) => {
     `Adding Guest ${guestName} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
   );
 
-  const request = {
-    telegramChatId: ctx.chat.id,
-    guestName: guestName,
-    invitedByTelegramUserId: ctx.from.id,
-  };
-
   try {
-    const result = await addGuestViaTelegram(request);
+    const group = getGroupFromCtxOrThrowException(ctx);
+
+    const result = await addGuestViaTelegram({
+      group,
+      telegramChatId: ctx.chat.id,
+      guestName: guestName,
+      invitedByTelegramUserId: ctx.from.id,
+    });
     if (result) {
       console.log(
         `Guest ${guestName} has been added to game in chat ${ctx.chat.id}.`
@@ -270,26 +284,28 @@ const removeGuestHandler = async (ctx: Ctx) => {
     `Removing Guest ${guestNumberRaw} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
   );
 
-  const request = {
-    telegramChatId: ctx.chat.id,
-    guestNumber: parseInt(guestNumberRaw, 10),
-    deletedByTelegramUserId: ctx.from.id,
-  };
-
   try {
-    const result = await deleteGuestViaTelegram(request);
+    const group = getGroupFromCtxOrThrowException(ctx);
+
+    const guestNumber = parseInt(guestNumberRaw, 10);
+    const result = await deleteGuestViaTelegram({
+      group,
+      telegramChatId: ctx.chat.id,
+      guestNumber: guestNumber,
+      deletedByTelegramUserId: ctx.from.id,
+    });
     if (result) {
       console.log(
-        `Guest ${request.guestNumber} has been removed from game in chat ${ctx.chat.id}.`
+        `Guest ${guestNumber} has been removed from game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
         i18next.t("guestRemoved.ok", {
-          guestNumber: request.guestNumber,
+          guestNumber,
         })
       );
     } else {
       console.log(
-        `Guest ${request.guestNumber} cannot be removed from the game in chat ${ctx.chat.id} because there are no upcoming games`
+        `Guest ${guestNumber} cannot be removed from the game in chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
@@ -315,8 +331,10 @@ function getScheduledForDateTimeText(dateTime: Date) {
   });
 }
 
-async function ensureLanguage(language: string) {
-  if (language !== i18next.language) {
-    await i18next.changeLanguage(language);
+function getGroupFromCtxOrThrowException(ctx: Ctx) {
+  if (ctx.state.group === null) {
+    throw new Error("Group not found");
   }
+
+  return ctx.state.group;
 }

@@ -1,15 +1,17 @@
-import { Game, Guest } from "@prisma/client";
+import { Game, Group, Guest } from "@prisma/client";
 import { db } from "./db";
-import { GameWithGroupOrNull, getUpcoming } from "./game";
+import { getUpcoming } from "./game";
 import { computeRSVPStatus } from "./rsvp";
 
 type InsertGuestRequest = {
+  group: Group;
   telegramChatId: number;
   invitedByTelegramUserId: number;
   guestName: string;
 };
 
 type DeleteGuestRequest = {
+  group: Group;
   telegramChatId: number;
   deletedByTelegramUserId: number;
   guestNumber: number;
@@ -23,20 +25,20 @@ type AddGuestReturn = {
 export async function addGuestViaTelegram(
   request: InsertGuestRequest
 ): Promise<AddGuestReturn | null> {
-  const game: GameWithGroupOrNull = await getUpcoming(request.telegramChatId);
+  const game = await getUpcoming(request.telegramChatId);
 
-  if (!game) {
+  if (game === null || request.group === null) {
     return null;
   }
 
-  const user = game.group.users?.find(
+  const user = request.group.users?.find(
     (u) => u.telegramUserId === request.invitedByTelegramUserId
   );
   if (!user) {
     throw new Error(`User not found`);
   }
 
-  const rsvpStatus = computeRSVPStatus(game);
+  const rsvpStatus = computeRSVPStatus(game, request.group);
   if (rsvpStatus.maxNumberReached) {
     throw new Error(
       "Max number of required players have confirmed already. No more guests can be added."
@@ -65,13 +67,13 @@ export async function addGuestViaTelegram(
 export async function deleteGuestViaTelegram(
   request: DeleteGuestRequest
 ): Promise<Game | null> {
-  const game: GameWithGroupOrNull = await getUpcoming(request.telegramChatId);
+  const game = await getUpcoming(request.telegramChatId);
 
   if (!game) {
     return null;
   }
 
-  const user = game.group.users?.find(
+  const user = request.group.users?.find(
     (u) => u.telegramUserId === request.deletedByTelegramUserId
   );
   if (!user) {

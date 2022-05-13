@@ -1,10 +1,11 @@
 import { Game, Group, Rsvp } from "@prisma/client";
 import { db } from "./db";
-import { GameWithGroupOrNull, getUpcoming } from "./game";
+import { getUpcoming } from "./game";
 
 type RsvpOption = "YES" | "NO" | "MAYBE";
 
 type RsvpRequest = {
+  group: Group;
   telegramChatId: number;
   telegramUserId: number;
   rsvpOption: RsvpOption;
@@ -23,20 +24,20 @@ export type RSVPStatus = {
 export async function rsvpViaTelegram(
   rsvpRequest: RsvpRequest
 ): Promise<Game | null> {
-  const game: GameWithGroupOrNull = await getUpcoming(rsvpRequest.telegramChatId);
+  const game = await getUpcoming(rsvpRequest.telegramChatId);
 
   if (!game) {
     return null;
   }
 
-  const user = game.group.users?.find(
+  const user = rsvpRequest.group.users?.find(
     (u) => u.telegramUserId === rsvpRequest.telegramUserId
   );
   if (!user) {
     throw new Error(`User not found`);
   }
 
-  const rsvpStatus = computeRSVPStatus(game);
+  const rsvpStatus = computeRSVPStatus(game, rsvpRequest.group);
   if (rsvpStatus.maxNumberReached && rsvpRequest.rsvpOption === "YES") {
     const previousRsvp = game.rsvps?.find(
       (x) => x.telegramUserId === user.telegramUserId
@@ -61,7 +62,7 @@ export async function rsvpViaTelegram(
   });
 }
 
-export function computeRSVPStatus(game: Game & { group: Group }): RSVPStatus {
+export function computeRSVPStatus(game: Game, group: Group): RSVPStatus {
   const userRsvps = getlatestRsvpPerUser(game.rsvps);
 
   const initialState: RSVPStatus = {
@@ -96,18 +97,18 @@ export function computeRSVPStatus(game: Game & { group: Group }): RSVPStatus {
   status.details = `${status.yes
     .map(
       (value, yesIndex) =>
-        `${yesIndex + 1}. ${findUserName(game, value.telegramUserId)}`
+        `${yesIndex + 1}. ${findUserName(group, value.telegramUserId)}`
     )
     .join("\n")}\n${game.guests
     .map(
       (g, guestIndex) =>
         `${status.yes.length + guestIndex + 1}. ${g.guestName} (guest #${
           g.guestNumber
-        } - Invited by ${findUserName(game, g.invitedByTelegramUserId)})`
+        } - Invited by ${findUserName(group, g.invitedByTelegramUserId)})`
     )
     .join("\n")}`;
 
-  const userThatHaveNoRsvped = game.group.users.filter(
+  const userThatHaveNoRsvped = group.users.filter(
     (user) =>
       userRsvps.findIndex((r) => r.telegramUserId === user.telegramUserId) ===
       -1
@@ -137,13 +138,13 @@ function getlatestRsvpPerUser(rsvps: Array<Rsvp>): Array<Rsvp> {
   return Object.values(buildRecord());
 }
 
-function findUserName(game: GameWithGroupOrNull, telegramUserId: number): string {
-  if (game === null) {
+function findUserName(group: Group, telegramUserId: number): string {
+  if (group === null) {
     return "";
   }
 
   return (
-    game.group.users.find((user) => user.telegramUserId === telegramUserId)
+    group.users.find((user) => user.telegramUserId === telegramUserId)
       ?.firstName ?? ""
   );
 }
