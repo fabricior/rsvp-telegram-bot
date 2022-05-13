@@ -70,7 +70,7 @@ Please refer to Telegram documentation to [create your own telegram bot](https:/
 
 4. Run the container
 
-Either locally / on premise using `docker -run ` or using a Cloud provider.
+Either locally / on premise using `docker -run ` or using a Cloud provider. See [this doc](/deploy/google-cloud.md) for guidance on how to deploy your container to Google Cloud.
 
 In any case, make sure the runtime gets the required environment variables. See `.env.template` and the [Development section](#Development) for details.
 
