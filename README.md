@@ -37,7 +37,11 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 
 - To add guests, that is, users that are not part of the group chat, use `/guest_add GUEST-NAME`
 
-    - For example, `/guest_add Richard` will add Richard to the upcoming game
+    ![Screenshot of Sending /guest_add commands.](/assets/06-AddGuests.png "Sending /guest_add command")
+
+- Guests are also displayed and accounted in the `/status` command 
+
+    ![Screenshot of Sending /status command when there are guests.](/assets/07-StatusWithGuests.png "Sending /status command when there are guests")
 
 - To remove guests, use `/guest_remove GUEST-NUMBER`
 
