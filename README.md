@@ -1,4 +1,4 @@
-# RSVP Bot Telegram Bot
+# RSVP Telegram Bot
 
 ## About
 
