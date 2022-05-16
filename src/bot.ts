@@ -1,5 +1,6 @@
 import { Context, NarrowedContext, Telegraf } from "telegraf";
 import i18next from "i18next";
+import winston from "winston";
 import resources from "./translations";
 import { getUpcoming, insertGame } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
@@ -18,6 +19,11 @@ const robotName = process.env.ROBOT_NAME || "RsvpBot";
 const environmentName = process.env.ENVIRONMENT || "test";
 
 type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
+
+const logger = winston.createLogger({
+  level: "info",
+  transports: [new winston.transports.Console()],
+});
 
 const defaultLanguage = "en";
 
@@ -52,7 +58,7 @@ export default function setupBot() {
 }
 
 const initCommandHandler = async (ctx: Ctx) => {
-  console.log(`Initializing bot for ChatId ${ctx.chat.id}`);
+  logger.info(`Initializing bot for ChatId ${ctx.chat.id}`);
 
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 2) {
@@ -68,7 +74,7 @@ const initCommandHandler = async (ctx: Ctx) => {
   }
 
   const handleUknownError = (error: Error | unknown) => {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.init"));
   };
 
@@ -78,7 +84,7 @@ const initCommandHandler = async (ctx: Ctx) => {
     }
 
     await insertGroup(ctx.chat.id, language);
-    console.log(`Bot initialized for ChatId ${ctx.chat.id}`);
+    logger.info(`Bot initialized for ChatId ${ctx.chat.id}`);
     ctx.reply(i18next.t("initialized.ok", { robotName, environmentName }));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -96,7 +102,7 @@ const initCommandHandler = async (ctx: Ctx) => {
 };
 
 const enrollCommandHandler = async (ctx: Ctx) => {
-  console.log(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+  logger.info(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
     const group = getGroupFromCtxOrThrowException(ctx);
@@ -106,12 +112,12 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
     });
     if (modifiedGroup) {
-      console.log(
+      logger.info(
         `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
       );
       ctx.reply(i18next.t("enroll.ok", { firstName: ctx.from.first_name }));
     } else {
-      console.log(
+      logger.info(
         `User ${ctx.from.id} was already enrolled in chat ${ctx.chat.id}. No action was performed.`
       );
       ctx.reply(
@@ -119,7 +125,7 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       );
     }
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.enroll"));
   }
 };
@@ -155,13 +161,13 @@ const createGameHandler = async (ctx: Ctx) => {
       })
     );
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.newGame"));
   }
 };
 
 const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
-  console.log(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+  logger.info(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
     const group = getGroupFromCtxOrThrowException(ctx);
@@ -173,20 +179,20 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
       rsvpOption: rsvpOption,
     });
     if (game) {
-      console.log(
+      logger.info(
         `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
       );
       ctx.reply(
         i18next.t("rsvp.ok", { firstName: ctx.from.first_name, rsvpOption })
       );
     } else {
-      console.log(
+      logger.info(
         `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.rsvp"));
   }
 };
@@ -222,7 +228,7 @@ const statusHandler = async (ctx: Ctx) => {
       })
     );
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.status"));
   }
 };
@@ -236,7 +242,7 @@ const addGuestHandler = async (ctx: Ctx) => {
 
   const [, guestName] = commandTextParts;
 
-  console.log(
+  logger.info(
     `Adding Guest ${guestName} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
   );
 
@@ -250,7 +256,7 @@ const addGuestHandler = async (ctx: Ctx) => {
       invitedByTelegramUserId: ctx.from.id,
     });
     if (result) {
-      console.log(
+      logger.info(
         `Guest ${guestName} has been added to game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
@@ -260,13 +266,13 @@ const addGuestHandler = async (ctx: Ctx) => {
         })
       );
     } else {
-      console.log(
+      logger.info(
         `Guest ${guestName} cannot be added to game chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.addGuest"));
   }
 };
@@ -280,7 +286,7 @@ const removeGuestHandler = async (ctx: Ctx) => {
 
   const [, guestNumberRaw] = commandTextParts;
 
-  console.log(
+  logger.info(
     `Removing Guest ${guestNumberRaw} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
   );
 
@@ -295,7 +301,7 @@ const removeGuestHandler = async (ctx: Ctx) => {
       deletedByTelegramUserId: ctx.from.id,
     });
     if (result) {
-      console.log(
+      logger.info(
         `Guest ${guestNumber} has been removed from game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
@@ -304,13 +310,13 @@ const removeGuestHandler = async (ctx: Ctx) => {
         })
       );
     } else {
-      console.log(
+      logger.info(
         `Guest ${guestNumber} cannot be removed from the game in chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
-    console.error(error);
+    logger.error(error);
     ctx.reply(i18next.t("uknownError.removeGuest"));
   }
 };
