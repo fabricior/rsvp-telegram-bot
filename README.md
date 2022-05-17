@@ -13,7 +13,7 @@ Telegram bot to coordinate the attendance to games that require a specific/maxim
 - Jest
 - Google Cloud Functions
 - Docker
-    - Limited support. Dockerfile is no longer needed for deployment as Google Cloud Functions create its own image.
+    - Limited support. Dockerfile is no longer needed for deployment as Google Cloud Functions create their own image.
 
 ### Features overview
 
@@ -69,7 +69,9 @@ Please refer to Telegram documentation to [create your own telegram bot](https:/
 3. Google Cloud Console
 
     3.1 Make you you have created a project in Google Cloud Console.
+
     3.2 Enable Cloud Functions API
+
     3.3 Enable Cloud Build API
 
 4. Create an `.env` file. Use the  `.env.template` to know the required keys. **Update** all values with values for your project.
@@ -83,7 +85,9 @@ npx dotenv-to-yaml .env .env.yaml
 6. Google Cloud SDK Shell
 
     6.1 Install Google Cloud SDK Shell in your local machine
+    
     6.2 Run `gcloud auth login`
+
     6.3 Run `gcloud functions deploy <function-name> --region=<your-region> --env-vars-file .env.yaml --runtime nodejs16 --trigger-http --allow-unauthenticated --entry-point cloudEntryPoint`
         where:
         `<function-name>` is the new cloud function name
