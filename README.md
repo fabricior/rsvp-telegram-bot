@@ -128,22 +128,21 @@ guest_remove - Removes a guest player. Usage: /guest_remove <number>
 
 ## Development
 
-⚠ Tested on Windows 10 PRO only.
-
 ### Requirements
 
 - Node v16.x or later
 - A MongoDb instance configured as replica set.
-- A telegram bot token.
+- All the steps described in the deployment section (except for the Google Cloud SDK Shell steps)
 
 ### Setup
 
 1. Run `npm install`
 2. Run `npx prisma db push`
 3. `npm install -g localtunnel`
-4. (Optionally) Run `npx prisma db seed`
-
-It assumes `.env` is already created. Otherwise refer to the deploy section.
+   
+   Note: it requires admin privileges
+   
+5. (Optionally) Run `npx prisma db seed`
 
 ### Run locally
 
