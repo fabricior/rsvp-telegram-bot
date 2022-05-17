@@ -1,29 +1,17 @@
-import { Context, NarrowedContext, Telegraf } from "telegraf";
+import { Telegraf } from "telegraf";
+import { Prisma, RsvpOption } from "@prisma/client";
 import i18next from "i18next";
-import winston from "winston";
-import resources from "./translations";
 import { getUpcoming, insertGame } from "./game";
 import { enrollUserInGroup, insertGroup } from "./group";
-import { Prisma, RsvpOption } from "@prisma/client";
 import { computeRSVPStatus, rsvpViaTelegram } from "./rsvp";
-import { Update } from "typegram/update";
-import { MountMap } from "telegraf/typings/telegram-types";
-import { parseDateISO } from "./dates";
 import { addGuestViaTelegram, deleteGuestViaTelegram } from "./guest";
+import { parseDateISO } from "./dates";
 import { groupMiddleware } from "./middleware";
-
-const token = process.env.TELEGRAM_BOT_TOKEN || "";
-const bot = new Telegraf(token);
+import { Ctx, CustomContext } from "./botTypes";
+import resources from "./translations";
 
 const robotName = process.env.ROBOT_NAME || "RsvpBot";
-const environmentName = process.env.ENVIRONMENT || "test";
-
-type Ctx = NarrowedContext<Context<Update>, MountMap["text"]>;
-
-const logger = winston.createLogger({
-  level: "info",
-  transports: [new winston.transports.Console()],
-});
+const environmentName = process.env.NODE_ENV;
 
 const defaultLanguage = "en";
 
@@ -33,9 +21,9 @@ i18next.init({
   fallbackLng: "en",
 });
 
-bot.use(groupMiddleware);
+export default function setupBot(bot: Telegraf<CustomContext>) {
+  bot.use(groupMiddleware);
 
-export default function setupBot() {
   bot.command("init", initCommandHandler);
 
   bot.command("enroll", enrollCommandHandler);
@@ -50,15 +38,10 @@ export default function setupBot() {
 
   bot.command("guest_add", addGuestHandler);
   bot.command("guest_remove", removeGuestHandler);
-
-  bot.launch();
-
-  process.once("SIGINT", () => bot.stop("SIGINT"));
-  process.once("SIGTERM", () => bot.stop("SIGTERM"));
 }
 
 const initCommandHandler = async (ctx: Ctx) => {
-  logger.info(`Initializing bot for ChatId ${ctx.chat.id}`);
+  ctx.logger.info(`Initializing bot for ChatId ${ctx.chat.id}`);
 
   const commandTextParts = ctx.update.message.text.split(" ");
   if (commandTextParts.length < 2) {
@@ -74,7 +57,7 @@ const initCommandHandler = async (ctx: Ctx) => {
   }
 
   const handleUknownError = (error: Error | unknown) => {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.init"));
   };
 
@@ -84,7 +67,7 @@ const initCommandHandler = async (ctx: Ctx) => {
     }
 
     await insertGroup(ctx.chat.id, language);
-    logger.info(`Bot initialized for ChatId ${ctx.chat.id}`);
+    ctx.logger.info(`Bot initialized for ChatId ${ctx.chat.id}`);
     ctx.reply(i18next.t("initialized.ok", { robotName, environmentName }));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -102,7 +85,7 @@ const initCommandHandler = async (ctx: Ctx) => {
 };
 
 const enrollCommandHandler = async (ctx: Ctx) => {
-  logger.info(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+  ctx.logger.info(`Enrolling UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
     const group = getGroupFromCtxOrThrowException(ctx);
@@ -112,12 +95,12 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       user: { firstName: ctx.from.first_name, telegramUserId: ctx.from.id },
     });
     if (modifiedGroup) {
-      logger.info(
+      ctx.logger.info(
         `User ${ctx.from.id} has been enrolled in chat ${ctx.chat.id}.`
       );
       ctx.reply(i18next.t("enroll.ok", { firstName: ctx.from.first_name }));
     } else {
-      logger.info(
+      ctx.logger.info(
         `User ${ctx.from.id} was already enrolled in chat ${ctx.chat.id}. No action was performed.`
       );
       ctx.reply(
@@ -125,7 +108,7 @@ const enrollCommandHandler = async (ctx: Ctx) => {
       );
     }
   } catch (error) {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.enroll"));
   }
 };
@@ -161,13 +144,13 @@ const createGameHandler = async (ctx: Ctx) => {
       })
     );
   } catch (error) {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.newGame"));
   }
 };
 
 const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
-  logger.info(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
+  ctx.logger.info(`RSVP for UserId ${ctx.from.id} in Chat ${ctx.chat.id}`);
 
   try {
     const group = getGroupFromCtxOrThrowException(ctx);
@@ -179,20 +162,20 @@ const rsvpCommandHandler = (rsvpOption: RsvpOption) => async (ctx: Ctx) => {
       rsvpOption: rsvpOption,
     });
     if (game) {
-      logger.info(
+      ctx.logger.info(
         `User ${ctx.from.id} has RSVPed in chat ${ctx.chat.id}. Option ${rsvpOption}`
       );
       ctx.reply(
         i18next.t("rsvp.ok", { firstName: ctx.from.first_name, rsvpOption })
       );
     } else {
-      logger.info(
+      ctx.logger.info(
         `User ${ctx.from.id} cannot RSVPed in chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.rsvp"));
   }
 };
@@ -228,7 +211,7 @@ const statusHandler = async (ctx: Ctx) => {
       })
     );
   } catch (error) {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.status"));
   }
 };
@@ -242,7 +225,7 @@ const addGuestHandler = async (ctx: Ctx) => {
 
   const [, guestName] = commandTextParts;
 
-  logger.info(
+  ctx.logger.info(
     `Adding Guest ${guestName} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
   );
 
@@ -256,7 +239,7 @@ const addGuestHandler = async (ctx: Ctx) => {
       invitedByTelegramUserId: ctx.from.id,
     });
     if (result) {
-      logger.info(
+      ctx.logger.info(
         `Guest ${guestName} has been added to game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
@@ -266,13 +249,13 @@ const addGuestHandler = async (ctx: Ctx) => {
         })
       );
     } else {
-      logger.info(
+      ctx.logger.info(
         `Guest ${guestName} cannot be added to game chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.addGuest"));
   }
 };
@@ -286,7 +269,7 @@ const removeGuestHandler = async (ctx: Ctx) => {
 
   const [, guestNumberRaw] = commandTextParts;
 
-  logger.info(
+  ctx.logger.info(
     `Removing Guest ${guestNumberRaw} in Chat ${ctx.chat.id} by User ${ctx.from.id}`
   );
 
@@ -301,7 +284,7 @@ const removeGuestHandler = async (ctx: Ctx) => {
       deletedByTelegramUserId: ctx.from.id,
     });
     if (result) {
-      logger.info(
+      ctx.logger.info(
         `Guest ${guestNumber} has been removed from game in chat ${ctx.chat.id}.`
       );
       ctx.reply(
@@ -310,13 +293,13 @@ const removeGuestHandler = async (ctx: Ctx) => {
         })
       );
     } else {
-      logger.info(
+      ctx.logger.info(
         `Guest ${guestNumber} cannot be removed from the game in chat ${ctx.chat.id} because there are no upcoming games`
       );
       ctx.reply(i18next.t("noUpcomingGames"));
     }
   } catch (error) {
-    logger.error(error);
+    ctx.logger.error(error);
     ctx.reply(i18next.t("uknownError.removeGuest"));
   }
 };
